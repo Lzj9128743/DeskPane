@@ -254,7 +254,7 @@ public sealed class DesktopOrganizationCoordinator
 
             if (result.CompletedItems.Count > 0)
             {
-                DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
+                DesktopStagingService.StageVirtualWidgetsOnStartup(_settingsService.Settings.Widgets);
             }
 
             return result;

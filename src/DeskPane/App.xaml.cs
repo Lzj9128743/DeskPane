@@ -1127,12 +1127,8 @@ public partial class App : Application
                     UiDispatcherQueue,
                     DisplayAreaWatcherService.CaptureCurrentSignature,
                     async (generation, reasons) =>
-                    {
-                        bool ok = WidgetManager is null ||
-                            await WidgetManager.RestoreWidgetPositionsAsync(generation, reasons);
-                        DesktopIconPositionService.SyncForWidgets(SettingsService.Settings.Widgets);
-                        return ok;
-                    });
+                        WidgetManager is null ||
+                        await WidgetManager.RestoreWidgetPositionsAsync(generation, reasons));
                 StartTopologyGatePolling();
                 if (WidgetManager is not null)
                 {
@@ -1208,8 +1204,8 @@ public partial class App : Application
 
             try
             {
+                DesktopStagingService.StageVirtualWidgetsOnStartup(SettingsService.Settings.Widgets);
                 await widgetManager.RestoreWidgetsAsync();
-                DesktopIconPositionService.SyncForWidgets(SettingsService.Settings.Widgets);
             }
             catch (Exception ex)
             {
@@ -5034,7 +5030,8 @@ public partial class App : Application
             ShutdownStep.Sync("widgets", () =>
             {
                 WidgetManager?.CloseAll();
-                DesktopIconPositionService.RestoreAllHiddenDesktopIcons();
+                DesktopStagingService.RestoreAllStagedFilesToDesktop(SettingsService.Settings.Widgets);
+                SettingsService.SaveDebounced(notifySubscribers: false);
                 if (DesktopIconVisibilityService.AreDesktopIconsVisible() == false)
                 {
                     DesktopIconVisibilityService.SetDesktopIconsVisible(true);

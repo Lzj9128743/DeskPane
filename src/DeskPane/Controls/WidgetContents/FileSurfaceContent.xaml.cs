@@ -2866,28 +2866,7 @@ public sealed partial class FileSurfaceContent :
         return unsafeDrop;
     }
 
-    private bool IsVirtualDesktopRootDestination(string destinationFolder)
-    {
-        if (!ViewModel.Config.IsVirtualDesktopGroup ||
-            string.IsNullOrWhiteSpace(ViewModel.MappedFolderPath))
-        {
-            return false;
-        }
-
-        try
-        {
-            return string.Equals(
-                Path.TrimEndingDirectorySeparator(Path.GetFullPath(destinationFolder)),
-                Path.TrimEndingDirectorySeparator(Path.GetFullPath(ViewModel.MappedFolderPath)),
-                StringComparison.OrdinalIgnoreCase);
-        }
-        catch
-        {
-            return false;
-        }
-    }
-
-    private bool AreAllSourcesAlreadyInDestinationLexically(
+    private static bool AreAllSourcesAlreadyInDestinationLexically(
         IEnumerable<string> sourcePaths,
         string? destinationFolder)
     {
@@ -2898,26 +2877,12 @@ public sealed partial class FileSurfaceContent :
 
         try
         {
+            string normalizedDestination = Path.TrimEndingDirectorySeparator(
+                Path.GetFullPath(destinationFolder));
             string[] paths = sourcePaths
                 .Where(path => !string.IsNullOrWhiteSpace(path))
                 .ToArray();
-            if (paths.Length == 0)
-            {
-                return false;
-            }
-
-            if (IsVirtualDesktopRootDestination(destinationFolder))
-            {
-                IReadOnlyList<WidgetConfig> allWidgets = _settingsService.Settings.Widgets;
-                return paths.All(sourcePath => VirtualDesktopGroupPolicy.ShouldIncludeItem(
-                    ViewModel.Config,
-                    allWidgets,
-                    sourcePath));
-            }
-
-            string normalizedDestination = Path.TrimEndingDirectorySeparator(
-                Path.GetFullPath(destinationFolder));
-            return paths.All(sourcePath =>
+            return paths.Length > 0 && paths.All(sourcePath =>
             {
                 string? parentPath = Path.GetDirectoryName(
                     Path.GetFullPath(sourcePath));
@@ -2934,7 +2899,7 @@ public sealed partial class FileSurfaceContent :
         }
     }
 
-    private Task<bool> AreAllSourcesAlreadyInDestinationResolvedAsync(
+    private static Task<bool> AreAllSourcesAlreadyInDestinationResolvedAsync(
         IEnumerable<string> sourcePaths,
         string? destinationFolder)
     {
@@ -2950,15 +2915,6 @@ public sealed partial class FileSurfaceContent :
         if (paths.Length == 0)
         {
             return Task.FromResult(false);
-        }
-
-        if (IsVirtualDesktopRootDestination(destinationFolder))
-        {
-            IReadOnlyList<WidgetConfig> allWidgets = _settingsService.Settings.Widgets;
-            return Task.FromResult(paths.All(path => VirtualDesktopGroupPolicy.ShouldIncludeItem(
-                ViewModel.Config,
-                allWidgets,
-                path)));
         }
 
         string destination = destinationFolder;

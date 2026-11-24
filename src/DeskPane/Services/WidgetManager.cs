@@ -874,20 +874,19 @@ public sealed partial class WidgetManager
         name = string.IsNullOrWhiteSpace(name)
             ? _localizationService.T("Widget.DefaultName")
             : name;
-        string userDesktop = FileService.GetDesktopPaths().UserDesktop;
 
         var config = new WidgetConfig
         {
             Name = name,
             WidgetKind = WidgetKind.File,
             IsVirtualDesktopGroup = true,
-            MappedFolderPath = userDesktop,
             FollowsDefaultStoragePath = false,
             ManagedFolderName = null,
             BoundsCoordinateVersion = WidgetConfig.CurrentBoundsCoordinateVersion,
             Width = _settingsService.Settings.DefaultWidgetWidth,
             Height = _settingsService.Settings.DefaultWidgetHeight
         };
+        config.MappedFolderPath = DesktopStagingService.GetWidgetStagingFolder(config.Id);
 
         // Unified new-widget funnel (spec 5.8): resolves the target display
         // from the "新格子出现在" setting (cursor display by default), places
@@ -1862,6 +1861,11 @@ public sealed partial class WidgetManager
 
         if (config is not null)
         {
+            if (config.IsVirtualDesktopGroup)
+            {
+                DesktopStagingService.RestoreWidgetStagedFilesToDesktop(config);
+            }
+
             RemoveMappedWidgetShortcut(config);
             // Per-widget custom icon/background assets follow the widget out:
             // nothing under data/widget-assets may outlive its config.
@@ -1872,7 +1876,6 @@ public sealed partial class WidgetManager
         _topologyLayoutService.RemoveSurface(_settingsService.Settings, widgetId);
         ClearWidgetGroupTransientState(widgetId);
         await _settingsService.SaveAsync();
-        DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
         _deletedWidgetIds.Remove(widgetId);
         App.Log($"[WidgetManager] Widget delete persisted: {widgetId} kind={config?.WidgetKind}");
         WidgetRemoved?.Invoke(widgetId);

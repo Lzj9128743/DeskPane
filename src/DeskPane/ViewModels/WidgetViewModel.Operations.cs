@@ -104,64 +104,6 @@ public partial class WidgetViewModel
         }
 
         string destinationFolderPath = CurrentFolderPath!;
-        if (Config.IsVirtualDesktopGroup &&
-            string.Equals(destinationFolderPath, MappedFolderPath, StringComparison.OrdinalIgnoreCase))
-        {
-            var desktopPaths = displayablePaths
-                .Where(VirtualDesktopGroupPolicy.IsDesktopItemPath)
-                .ToList();
-            var externalPaths = displayablePaths
-                .Where(p => !VirtualDesktopGroupPolicy.IsDesktopItemPath(p))
-                .ToList();
-
-            var assignedPaths = new List<string>(desktopPaths);
-
-            if (externalPaths.Count > 0)
-            {
-                bool shouldMoveExternal = moveWhenMapped ?? ShouldMoveManagedItems(
-                    externalPaths,
-                    destinationFolderPath);
-                OrganizerOperationResult externalOp = await _organizerService.OrganizeDropAsync(
-                    Config,
-                    Name,
-                    externalPaths,
-                    shouldMoveExternal,
-                    useShellProgress,
-                    ownerWindowHandle,
-                    progress,
-                    cancellationToken,
-                    destinationFolderPath);
-                assignedPaths.AddRange(externalOp.CompletedItems.Select(i => i.DestinationPath));
-            }
-
-            if (assignedPaths.Count > 0)
-            {
-                IReadOnlyList<string> affectedWidgetIds = VirtualDesktopGroupPolicy.AssignPathsToVirtualGroup(
-                    Config,
-                    _settingsService.Settings.Widgets,
-                    assignedPaths);
-                await _settingsService.SaveAsync();
-                DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
-                await ReloadFolderContentsAsync(destinationFolderPath, cancellationToken: cancellationToken);
-
-                if (App.Current?.WidgetManager is { } manager)
-                {
-                    foreach (string affectedId in affectedWidgetIds)
-                    {
-                        if (!string.Equals(affectedId, Config.Id, StringComparison.Ordinal))
-                        {
-                            await manager.RefreshFileWidgetAsync(affectedId);
-                        }
-                    }
-                }
-            }
-
-            return assignedPaths
-                .Select(Path.GetFullPath)
-                .Distinct(StringComparer.OrdinalIgnoreCase)
-                .ToArray();
-        }
-
         bool shouldMove = moveWhenMapped ?? ShouldMoveManagedItems(
             displayablePaths,
             destinationFolderPath);
@@ -195,6 +137,13 @@ public partial class WidgetViewModel
         // CompletedItems (not the persisted History entry) carries this
         // run's receipts: oversized batches are compacted to a summary
         // before the entry is returned.
+        if (Config.IsVirtualDesktopGroup && operation.CompletedItems.Count > 0)
+        {
+            DesktopStagingService.RecordStagedItems(
+                Config,
+                operation.CompletedItems.Select(item => (item.SourcePath, item.DestinationPath)));
+        }
+
         await ApplyImportedTransferResultsAsync(
             operation.CompletedItems.Select(item => new FileService.FileTransferResult(
                 item.SourcePath,
