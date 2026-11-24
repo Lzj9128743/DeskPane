@@ -687,6 +687,7 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
                         _settingsService.Settings.Widgets,
                         [workItem.Path]);
                     await _settingsService.SaveAsync();
+                    DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
                     historyId = Guid.NewGuid().ToString("N");
                     moveSucceeded = true;
                     _targetUnavailableNotifiedWidgetIds.TryRemove(target.Id, out _);

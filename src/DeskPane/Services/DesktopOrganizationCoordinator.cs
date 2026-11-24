@@ -254,7 +254,7 @@ public sealed class DesktopOrganizationCoordinator
 
             if (result.CompletedItems.Count > 0)
             {
-                DesktopIconVisibilityService.SetDesktopIconsVisible(false);
+                DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
             }
 
             return result;

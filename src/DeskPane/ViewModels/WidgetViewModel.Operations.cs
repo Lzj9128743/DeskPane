@@ -141,6 +141,7 @@ public partial class WidgetViewModel
                     _settingsService.Settings.Widgets,
                     assignedPaths);
                 await _settingsService.SaveAsync();
+                DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
                 await ReloadFolderContentsAsync(destinationFolderPath, cancellationToken: cancellationToken);
 
                 if (App.Current?.WidgetManager is { } manager)

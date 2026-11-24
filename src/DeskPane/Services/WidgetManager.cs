@@ -1872,6 +1872,7 @@ public sealed partial class WidgetManager
         _topologyLayoutService.RemoveSurface(_settingsService.Settings, widgetId);
         ClearWidgetGroupTransientState(widgetId);
         await _settingsService.SaveAsync();
+        DesktopIconPositionService.SyncForWidgets(_settingsService.Settings.Widgets);
         _deletedWidgetIds.Remove(widgetId);
         App.Log($"[WidgetManager] Widget delete persisted: {widgetId} kind={config?.WidgetKind}");
         WidgetRemoved?.Invoke(widgetId);
