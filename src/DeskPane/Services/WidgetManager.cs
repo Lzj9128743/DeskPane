@@ -915,40 +915,6 @@ public sealed partial class WidgetManager
         await CreateManagedWidgetAsync(_localizationService.T("Widget.DefaultNameShort"));
     }
 
-    /// <summary>
-    /// Create a widget mapped to an arbitrary folder.
-    /// </summary>
-    public async Task CreateFolderWidgetAsync(string folderPath)
-    {
-        string normalizedPath = Path.TrimEndingDirectorySeparator(Path.GetFullPath(folderPath));
-        EnsureFileWidgetPathAvailable(
-            normalizedPath,
-            candidateFollowsDefaultStoragePath: false);
-
-        string folderName = Path.GetFileName(normalizedPath);
-        if (string.IsNullOrWhiteSpace(folderName))
-        {
-            folderName = normalizedPath;
-        }
-
-        var config = new WidgetConfig
-        {
-            Name = folderName,
-            WidgetKind = WidgetKind.File,
-            MappedFolderPath = normalizedPath,
-            BoundsCoordinateVersion = WidgetConfig.CurrentBoundsCoordinateVersion,
-            Width = _settingsService.Settings.DefaultWidgetWidth,
-            Height = _settingsService.Settings.DefaultWidgetHeight
-        };
-
-        ApplyNewWidgetPlacement(config);
-        _settingsService.Settings.Widgets.Add(config);
-        SyncMappedWidgetShortcut(config);
-        await _settingsService.SaveAsync();
-
-        await CreateWidgetFromConfigAsync(config, revealAfterCreate: true);
-    }
-
     public void EnsureFileWidgetPathAvailable(
         string folderPath,
         string? excludedWidgetId = null,

@@ -78,8 +78,6 @@ public static class JumpListService
             jumpList.Items.Clear();
 
             AddItem(jumpList, localization.T("JumpList.ToggleWidgets"), ArgToggleWidgets);
-            AddItem(jumpList, localization.T("JumpList.NewFolderWidget"), ArgNewFolderWidget);
-            AddItem(jumpList, localization.T("JumpList.OpenStorage"), ArgOpenStorage);
 
             await jumpList.SaveAsync();
             App.LogVerbose("[JumpList] Jump list configured successfully");
@@ -141,36 +139,6 @@ public static class JumpListService
                         bool anyVisible = wm.HasVisibleWidgets;
                         await wm.SetAllWidgetsVisibleAsync(!anyVisible);
                     }
-                    break;
-
-                case ArgNewFolderWidget:
-                    if (app.WidgetManager is not null)
-                    {
-                        // The native folder dialog is modal on the UI thread,
-                        // and jump-list activation can arrive mid-startup:
-                        // blocking OnLaunched inside the dialog would hold
-                        // the launch pipeline hostage until it closes. Leave
-                        // the activation frame first (the same
-                        // callback-isolation invariant the tray uses), so the
-                        // modal runs once startup's synchronous work drains —
-                        // its message loop keeps pumping queued startup work
-                        // while it is up.
-                        UiDispatch.PostAfterCallback(() =>
-                            App.SafeFireAndForget(
-                                () => app.CreateFolderWidgetFromPickerAsync(),
-                                "jump-list-folder-map"));
-                    }
-                    break;
-
-                case ArgOpenSettings:
-                    app.ShowSettings();
-                    break;
-
-                case ArgOpenStorage:
-                    string path = SettingsService.NormalizeManagedStorageRootPath(
-                        app.SettingsService.Settings.DefaultManagedStorageRootPath);
-                    Directory.CreateDirectory(path);
-                    Win32Helper.OpenFile(path);
                     break;
             }
         }

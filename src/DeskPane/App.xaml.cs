@@ -52,8 +52,6 @@ public partial class App : Application
     private const long MaxLogFileSizeBytes = 5 * 1024 * 1024; // 5 MB before rotation
     private const string DesktopOrganizationNotificationGroup = "desktop-organization";
     private const string DesktopOrganizationTargetUnavailableNotificationTag = "desktop-organization-target-unavailable";
-    private const string FolderMappingNotificationGroup = "folder-mapping";
-    private const string FolderMappingConflictNotificationTag = "folder-mapping-conflict";
     private const string PendingJumpListArgumentFileName = "pending-jumplist-arg.txt";
     private const string VerboseLoggingEnvironmentVariable = "DESKPANE_VERBOSE_LOG";
     private static readonly bool EnableVerboseLogging = IsEnabledEnvironmentValue(

@@ -95,42 +95,10 @@ public sealed partial class ContentWidgetWindow
 
     private void ShowWidgetCreateFlyout()
     {
-        var localization = App.Current.LocalizationService;
-        var flyout = new MenuFlyout();
-
-        var createWidgetItem = new MenuFlyoutItem
+        if (App.Current.WidgetManager is { } widgetManager)
         {
-            Text = localization.T("Common.NewWidget"),
-            Icon = new SymbolIcon(Symbol.Add)
-        };
-        createWidgetItem.Click += async (_, _) =>
-        {
-            if (App.Current.WidgetManager is { } widgetManager)
-            {
-                await widgetManager.CreateWidgetOfKindAsync(WidgetKind.File);
-            }
-        };
-        flyout.Items.Add(createWidgetItem);
-
-        var mapFolderItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Common.NewFolderMapping"),
-            Icon = new SymbolIcon(Symbol.OpenFile)
-        };
-        mapFolderItem.Click += async (_, _) =>
-        {
-            // The native picker is modal on this thread; give the flyout its
-            // close before the dialog takes over the message loop (the tray
-            // entrance hides + yields for the same reason).
-            flyout.Hide();
-            await Task.Yield();
-            await App.Current.CreateFolderWidgetFromPickerAsync();
-        };
-        flyout.Items.Add(mapFolderItem);
-
-        ShowFlyoutWithInteraction(
-            flyout,
-            ContentWidgetShell.AddActionButton);
+            _ = widgetManager.CreateWidgetOfKindAsync(WidgetKind.File);
+        }
     }
 
     /// <summary>

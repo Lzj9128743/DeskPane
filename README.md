@@ -30,10 +30,10 @@ DeskPane is a streamlined, low-footprint Windows desktop organizer focused stric
 
 ### Clean Visuals & Controls
 - **Two background styles**: **Acrylic** (20% / 40% / 60% / 80% / 100% opacity) and **Transparent (No Blur)** with automatic light text (`#F7F7F7`) for crisp legibility over wallpapers.
-- **Icon & List views**: Switch any file pane between **Icon View** and **List View** directly from the pane menu, with drag-and-drop, manual/rule sorting, stacking, folder mapping, and compact capsule collapse.
+- **Icon & List views**: Switch any file pane between **Icon View** and **List View** directly from the pane menu, with drag-and-drop, manual/rule sorting, stacking, and compact capsule collapse.
 - **Clean hover experience**: Internal file paths are hidden from icon hover tooltips.
 - **Double-click blank desktop**: Quickly toggle native Windows desktop icons on/off with negligible overhead.
-- **All settings in the tray menu**: Organize Desktop, Restore All to Desktop, Hide/Show Desktop Icons, New Box, Map Folder, Light/Dark Theme, Background & Opacity, Language (`简体中文` / `English`), Auto-start, and Exit.
+- **All settings in the tray menu**: Organize Desktop, Restore All to Desktop, Hide/Show Desktop Icons, New Box, Background & Opacity, Language (`简体中文` / `English`), Auto-start, and Exit.
 
 ---
 
