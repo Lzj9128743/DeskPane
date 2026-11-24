@@ -202,6 +202,11 @@
     <Content Include="Assets\deskpane.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
+    <None Include="Assets\RestoreDesktopFiles.bat">
+      <Link>一键恢复桌面文件.bat</Link>
+      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
+      <CopyToPublishDirectory>Always</CopyToPublishDirectory>
+    </None>
     <Content Include="Assets\deskpane.svg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>

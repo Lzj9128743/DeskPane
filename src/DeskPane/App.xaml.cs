@@ -90,6 +90,7 @@ public partial class App : Application
     private MenuFlyout? _trayContextMenu;
     private bool _traySecondWindowSyncLogged;
     private MenuFlyoutItem? _trayOrganizeDesktopItem;
+    private MenuFlyoutItem? _trayRestoreDesktopFilesItem;
     private MenuFlyoutItem? _trayToggleDesktopIconsItem;
     private MenuFlyoutItem? _trayMapFolderItem;
     private MenuFlyoutItem? _trayToggleThemeItem;
@@ -404,6 +405,8 @@ public partial class App : Application
 
         StartupService.Configure(StartupServiceFactory.Create(DistributionService, SettingsService));
         UnhandledException += OnUnhandledException;
+        AppDomain.CurrentDomain.UnhandledException += OnDomainUnhandledException;
+        AppDomain.CurrentDomain.ProcessExit += OnProcessExit;
         Log($"Distribution channel={DistributionService.ChannelName} packaged={DistributionService.IsPackaged}");
     }
 
@@ -963,6 +966,16 @@ public partial class App : Application
             return;
         }
         _isLaunched = true;
+
+        if (Environment.GetCommandLineArgs().Any(a =>
+            string.Equals(a, "--restore-desktop", StringComparison.OrdinalIgnoreCase)))
+        {
+            int restored = DesktopStagingService.EmergencyRestoreAllStagedFilesToDesktop(
+                SettingsService?.Settings?.Widgets);
+            Log($"[EmergencyRestore] CLI --restore-desktop restored={restored}");
+            Exit();
+            return;
+        }
 
         bool startupTaskActivation = IsStartupTaskActivation();
         bool isStartupLaunch = StartupLaunchPolicy.IsStartupLaunch(
@@ -5078,6 +5091,31 @@ public partial class App : Application
             }));
     }
 
+    private void OnDomainUnhandledException(object sender, System.UnhandledExceptionEventArgs e)
+    {
+        try
+        {
+            Log($"[CrashGuard] Domain unhandled exception (terminating={e.IsTerminating}): {e.ExceptionObject}");
+            DesktopStagingService.EmergencyRestoreAllStagedFilesToDesktop(SettingsService?.Settings?.Widgets);
+        }
+        catch
+        {
+            // Never throw from a crash handler.
+        }
+    }
+
+    private void OnProcessExit(object? sender, EventArgs e)
+    {
+        try
+        {
+            DesktopStagingService.EmergencyRestoreAllStagedFilesToDesktop(SettingsService?.Settings?.Widgets);
+        }
+        catch
+        {
+            // Best-effort restore on OS shutdown / session end / process exit.
+        }
+    }
+
     private void OnUnhandledException(object sender, Microsoft.UI.Xaml.UnhandledExceptionEventArgs e)
     {
         Log($"Unhandled exception: {e.Exception}");
@@ -5087,6 +5125,7 @@ public partial class App : Application
 
         if (!IsStartupLifelineEstablished)
         {
+            DesktopStagingService.EmergencyRestoreAllStagedFilesToDesktop(SettingsService?.Settings?.Widgets);
             // Before the tray exists the process has nothing to fall back on,
             // and swallowing the exception would leave it holding the
             // single-instance mutex without any UI.

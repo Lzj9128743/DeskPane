@@ -224,12 +224,13 @@ public static class DesktopStagingService
     /// members back into Config.Items (as original Desktop paths) and moves every
     /// staged file/folder back to the real Desktop.
     /// </summary>
-    public static void RestoreAllStagedFilesToDesktop(IReadOnlyList<WidgetConfig> widgets)
+    public static int RestoreAllStagedFilesToDesktop(IReadOnlyList<WidgetConfig> widgets)
     {
         lock (s_sync)
         {
             List<StagingLedgerEntry> ledger = LoadLedgerLocked();
             var handledWidgetIds = new HashSet<string>(StringComparer.Ordinal);
+            int restoredCount = 0;
 
             for (int i = 0; i < widgets.Count; i++)
             {
@@ -241,34 +242,145 @@ public static class DesktopStagingService
 
                 handledWidgetIds.Add(widget.Id);
                 string stagingFolder = GetWidgetStagingFolder(widget.Id);
-                RestoreFolderToDesktopLocked(widget.Id, stagingFolder, ledger, recordItemsOnWidget: widget);
+                restoredCount += RestoreFolderToDesktopLocked(widget.Id, stagingFolder, ledger, recordItemsOnWidget: widget);
             }
 
-            // Also restore any orphan entries left in the ledger (e.g., from a prior crash).
-            for (int i = ledger.Count - 1; i >= 0; i--)
-            {
-                StagingLedgerEntry entry = ledger[i];
-                if (handledWidgetIds.Contains(entry.WidgetId))
-                {
-                    continue;
-                }
-
-                if (!PathExists(entry.StagedPath))
-                {
-                    ledger.RemoveAt(i);
-                    continue;
-                }
-
-                string restoreTarget = EnsureUniqueDestinationPath(entry.OriginalDesktopPath);
-                if (TryMoveFileSystemEntry(entry.StagedPath, restoreTarget))
-                {
-                    ledger.RemoveAt(i);
-                }
-            }
-
+            restoredCount += RestoreOrphanLedgerAndStagingFoldersLocked(ledger, handledWidgetIds);
             SaveLedgerLocked(ledger);
             TryRemoveEmptyDirectory(GetStagingRootPath());
+            return restoredCount;
         }
+    }
+
+    /// <summary>
+    /// User-initiated one-click restore from the tray menu: moves every staged file
+    /// back to the real Desktop and clears virtual group item assignments so files
+    /// stay on the desktop instead of being re-staged on next launch.
+    /// </summary>
+    public static int RestoreAllStagedFilesFromTray(IReadOnlyList<WidgetConfig> widgets)
+    {
+        lock (s_sync)
+        {
+            List<StagingLedgerEntry> ledger = LoadLedgerLocked();
+            var handledWidgetIds = new HashSet<string>(StringComparer.Ordinal);
+            int restoredCount = 0;
+
+            for (int i = 0; i < widgets.Count; i++)
+            {
+                WidgetConfig widget = widgets[i];
+                if (!widget.IsVirtualDesktopGroup)
+                {
+                    continue;
+                }
+
+                handledWidgetIds.Add(widget.Id);
+                string stagingFolder = GetWidgetStagingFolder(widget.Id);
+                restoredCount += RestoreFolderToDesktopLocked(widget.Id, stagingFolder, ledger, recordItemsOnWidget: null);
+                widget.Items.Clear();
+            }
+
+            restoredCount += RestoreOrphanLedgerAndStagingFoldersLocked(ledger, handledWidgetIds);
+            SaveLedgerLocked(ledger);
+            TryRemoveEmptyDirectory(GetStagingRootPath());
+            return restoredCount;
+        }
+    }
+
+    /// <summary>
+    /// Crash / session-ending / CLI emergency restore: never throws, restores all
+    /// staged files back to the real Desktop even if settings/widgets are unavailable.
+    /// </summary>
+    public static int EmergencyRestoreAllStagedFilesToDesktop(IReadOnlyList<WidgetConfig>? widgets = null)
+    {
+        try
+        {
+            if (widgets is not null)
+            {
+                return RestoreAllStagedFilesToDesktop(widgets);
+            }
+
+            lock (s_sync)
+            {
+                List<StagingLedgerEntry> ledger = LoadLedgerLocked();
+                int restoredCount = RestoreOrphanLedgerAndStagingFoldersLocked(ledger, handledWidgetIds: null);
+                SaveLedgerLocked(ledger);
+                TryRemoveEmptyDirectory(GetStagingRootPath());
+                return restoredCount;
+            }
+        }
+        catch
+        {
+            return 0;
+        }
+    }
+
+    private static int RestoreOrphanLedgerAndStagingFoldersLocked(
+        List<StagingLedgerEntry> ledger,
+        HashSet<string>? handledWidgetIds)
+    {
+        int restoredCount = 0;
+        string userDesktop = FileService.GetDesktopPaths().UserDesktop;
+
+        for (int i = ledger.Count - 1; i >= 0; i--)
+        {
+            StagingLedgerEntry entry = ledger[i];
+            if (handledWidgetIds is not null && handledWidgetIds.Contains(entry.WidgetId))
+            {
+                continue;
+            }
+
+            if (!PathExists(entry.StagedPath))
+            {
+                ledger.RemoveAt(i);
+                continue;
+            }
+
+            string target = string.IsNullOrWhiteSpace(entry.OriginalDesktopPath)
+                ? Path.Combine(userDesktop, Path.GetFileName(entry.StagedPath))
+                : entry.OriginalDesktopPath;
+            string restoreTarget = PathExists(target) ? EnsureUniqueDestinationPath(target) : target;
+            if (TryMoveFileSystemEntry(entry.StagedPath, restoreTarget))
+            {
+                ledger.RemoveAt(i);
+                restoredCount++;
+            }
+        }
+
+        // Sweep any remaining files in staging subdirectories even if the ledger was missing/corrupt.
+        string stagingRoot = GetStagingRootPath();
+        if (Directory.Exists(stagingRoot))
+        {
+            try
+            {
+                foreach (string subDir in Directory.GetDirectories(stagingRoot))
+                {
+                    foreach (string entryPath in Directory.GetFileSystemEntries(subDir))
+                    {
+                        string fileName = Path.GetFileName(entryPath);
+                        if (string.IsNullOrWhiteSpace(fileName))
+                        {
+                            continue;
+                        }
+
+                        string target = Path.Combine(userDesktop, fileName);
+                        string restoreTarget = PathExists(target) ? EnsureUniqueDestinationPath(target) : target;
+                        if (TryMoveFileSystemEntry(entryPath, restoreTarget))
+                        {
+                            RemoveLedgerByStagedPath(ledger, entryPath);
+                            restoredCount++;
+                        }
+                    }
+
+                    TryRemoveEmptyDirectory(subDir);
+                }
+            }
+            catch
+            {
+                // Best-effort sweep.
+            }
+        }
+
+        return restoredCount;
     }
 
     /// <summary>
@@ -308,7 +420,7 @@ public static class DesktopStagingService
         }
     }
 
-    private static void RestoreFolderToDesktopLocked(
+    private static int RestoreFolderToDesktopLocked(
         string widgetId,
         string stagingFolder,
         List<StagingLedgerEntry> ledger,
@@ -316,6 +428,7 @@ public static class DesktopStagingService
     {
         string userDesktop = FileService.GetDesktopPaths().UserDesktop;
         var rememberedDesktopPaths = new List<string>();
+        int restoredCount = 0;
 
         if (Directory.Exists(stagingFolder))
         {
@@ -351,6 +464,7 @@ public static class DesktopStagingService
                 {
                     rememberedDesktopPaths.Add(restoreTarget);
                     RemoveLedgerByStagedPath(ledger, stagedPath);
+                    restoredCount++;
                 }
                 else
                 {
@@ -374,6 +488,8 @@ public static class DesktopStagingService
                 });
             }
         }
+
+        return restoredCount;
     }
 
     private static string ResolveOriginalDesktopPath(

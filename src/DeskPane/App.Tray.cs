@@ -59,6 +59,26 @@ public partial class App
                 contextMenu,
                 OpenDesktopOrganizationFromTray));
 
+        var restoreDesktopFilesItem = CreateStyledTrayMenuItem(
+            string.Empty,
+            new FontIcon { Glyph = "\uE777" });
+        AttachTrayMenuItemInteraction(
+            restoreDesktopFilesItem,
+            () => RunTrayMenuActionAsync(contextMenu, async () =>
+            {
+                int restored = DesktopStagingService.RestoreAllStagedFilesFromTray(
+                    SettingsService.Settings.Widgets);
+                await SettingsService.SaveAsync();
+                if (WidgetManager is not null)
+                {
+                    foreach (var widget in SettingsService.Settings.Widgets.Where(w => w.IsVirtualDesktopGroup))
+                    {
+                        await WidgetManager.RefreshFileWidgetAsync(widget.Id);
+                    }
+                }
+                Log($"[Tray] Restored all staged desktop files count={restored}");
+            }));
+
         var toggleNativeDesktopIconsItem = CreateStyledTrayMenuItem(
             string.Empty,
             new FontIcon { Glyph = "\uE890" });
@@ -136,6 +156,7 @@ public partial class App
 
         _trayCreateWidgetItems.Clear();
         contextMenu.Items.Add(organizeDesktopItem);
+        contextMenu.Items.Add(restoreDesktopFilesItem);
         contextMenu.Items.Add(toggleNativeDesktopIconsItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
         foreach (var descriptor in new WidgetContentFactory(LocalizationService).GetCreateEntryDescriptors())
@@ -161,6 +182,7 @@ public partial class App
         contextMenu.Items.Add(exitItem);
 
         _trayOrganizeDesktopItem = organizeDesktopItem;
+        _trayRestoreDesktopFilesItem = restoreDesktopFilesItem;
         _trayToggleDesktopIconsItem = toggleNativeDesktopIconsItem;
         _trayMapFolderItem = mapFolderItem;
         _trayToggleThemeItem = toggleThemeItem;
@@ -1124,6 +1146,13 @@ public partial class App
         {
             _trayOrganizeDesktopItem.Text = LocalizationService.T(
                 "Tray.OrganizeDesktop");
+        }
+
+        if (_trayRestoreDesktopFilesItem is not null)
+        {
+            _trayRestoreDesktopFilesItem.Text = isChinese
+                ? "恢复全部文件到桌面"
+                : "Restore All to Desktop";
         }
 
         if (_trayToggleDesktopIconsItem is not null)
