@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [string]$MsixPath,
@@ -197,7 +197,7 @@ if ($null -eq $identity) {
     Add-AuditFailure "The package identity is missing."
 }
 else {
-    if ($identity.Name -ne "D1FC332A.DeskBoxWidgets") {
+    if ($identity.Name -ne "D1FC332A.DeskPaneWidgets") {
         Add-AuditFailure "Unexpected package identity name '$($identity.Name)'."
     }
     if ($identity.Publisher -ne "CN=3B75AA4A-2433-4F71-9CC1-B644B26F474A") {
@@ -207,8 +207,8 @@ else {
         Add-AuditFailure "Package architecture '$($identity.ProcessorArchitecture)' does not match '$platformSegment'."
     }
 }
-if ($null -eq $application -or $application.Executable -ne "DeskBox.exe") {
-    Add-AuditFailure "The package application does not target DeskBox.exe."
+if ($null -eq $application -or $application.Executable -ne "DeskPane.exe") {
+    Add-AuditFailure "The package application does not target DeskPane.exe."
 }
 if ($null -eq $frameworkDependency -or
     [version]$frameworkDependency.MinVersion -lt [version]"2.5.1.0") {
@@ -216,9 +216,9 @@ if ($null -eq $frameworkDependency -or
 }
 
 $requiredFiles = @(
-    "DeskBox.exe",
-    "DeskBox.ThumbnailProxy.exe",
-    "deskbox_native.dll",
+    "DeskPane.exe",
+    "DeskPane.ThumbnailProxy.exe",
+    "deskpane_native.dll",
     "EverythingSdk.dll",
     "ThirdParty/Everything/LICENSE.txt",
     "resources.pri",
@@ -234,11 +234,11 @@ foreach ($missingFile in $missingRequiredFiles) {
 }
 
 $forbiddenPatterns = @(
-    '(^|/)DeskBox\.dll$',
-    '(^|/)DeskBox\.deps\.json$',
-    '(^|/)DeskBox\.runtimeconfig\.json$',
-    '(^|/)DeskBox\.Updater(?:\.|/|$)',
-    '(^|/)deskbox_search_core(?:\.|$)',
+    '(^|/)DeskPane\.dll$',
+    '(^|/)DeskPane\.deps\.json$',
+    '(^|/)DeskPane\.runtimeconfig\.json$',
+    '(^|/)DeskPane\.Updater(?:\.|/|$)',
+    '(^|/)deskpane_search_core(?:\.|$)',
     '\.pdb$',
     '(^|/)(?:coreclr|clrjit|hostfxr|hostpolicy)\.dll$',
     'donation-wechat',
@@ -262,9 +262,9 @@ foreach ($forbiddenFile in $forbiddenFiles) {
     Add-AuditFailure "Forbidden Store AOT payload is present: '$forbiddenFile'."
 }
 
-$deskBoxExePath = Join-Path $layoutDirectory "DeskBox.exe"
-$thumbnailProxyPath = Join-Path $layoutDirectory "DeskBox.ThumbnailProxy.exe"
-$nativeDllPath = Join-Path $layoutDirectory "deskbox_native.dll"
+$deskBoxExePath = Join-Path $layoutDirectory "DeskPane.exe"
+$thumbnailProxyPath = Join-Path $layoutDirectory "DeskPane.ThumbnailProxy.exe"
+$nativeDllPath = Join-Path $layoutDirectory "deskpane_native.dll"
 $everythingSdkPath = Join-Path $layoutDirectory "EverythingSdk.dll"
 $deskBoxPe = $null
 $thumbnailProxyPe = $null
@@ -272,23 +272,23 @@ $nativeContract = $null
 if (Test-Path -LiteralPath $deskBoxExePath -PathType Leaf) {
     $deskBoxPe = Get-PeFacts -Path $deskBoxExePath
     if ($deskBoxPe.Machine -ne $expectedMachine) {
-        Add-AuditFailure "DeskBox.exe machine '$($deskBoxPe.MachineHex)' does not match $ExpectedPlatform."
+        Add-AuditFailure "DeskPane.exe machine '$($deskBoxPe.MachineHex)' does not match $ExpectedPlatform."
     }
     if ($deskBoxPe.HasClrHeader) {
-        Add-AuditFailure "DeskBox.exe still contains a CLR header instead of a Native AOT image."
+        Add-AuditFailure "DeskPane.exe still contains a CLR header instead of a Native AOT image."
     }
     if ($deskBoxPe.Length -lt 10MB) {
-        Add-AuditFailure "DeskBox.exe is unexpectedly small for the current Native AOT product image."
+        Add-AuditFailure "DeskPane.exe is unexpectedly small for the current Native AOT product image."
     }
 }
 
 if (Test-Path -LiteralPath $thumbnailProxyPath -PathType Leaf) {
     $thumbnailProxyPe = Get-PeFacts -Path $thumbnailProxyPath
     if ($thumbnailProxyPe.Machine -ne $expectedMachine) {
-        Add-AuditFailure "DeskBox.ThumbnailProxy.exe machine '$($thumbnailProxyPe.MachineHex)' does not match $ExpectedPlatform."
+        Add-AuditFailure "DeskPane.ThumbnailProxy.exe machine '$($thumbnailProxyPe.MachineHex)' does not match $ExpectedPlatform."
     }
     if ($thumbnailProxyPe.HasClrHeader) {
-        Add-AuditFailure "DeskBox.ThumbnailProxy.exe unexpectedly contains a CLR header."
+        Add-AuditFailure "DeskPane.ThumbnailProxy.exe unexpectedly contains a CLR header."
     }
 }
 
@@ -303,20 +303,20 @@ else {
 }
 
 $nativeExports = @(
-    "deskbox_native_abi_version",
-    "deskbox_native_capabilities",
-    "deskbox_shortcut_read_v2",
-    "deskbox_shortcut_resolve_no_ui_v2",
-    "deskbox_shortcut_write_v2",
-    "deskbox_shortcut_resolve_with_ui_v2",
-    "deskbox_music_volume_v1",
-    "deskbox_explorer_shell_launch_v1",
-    "deskbox_quick_access_v1",
-    "deskbox_recycle_bin_v1"
+    "deskpane_native_abi_version",
+    "deskpane_native_capabilities",
+    "deskpane_shortcut_read_v2",
+    "deskpane_shortcut_resolve_no_ui_v2",
+    "deskpane_shortcut_write_v2",
+    "deskpane_shortcut_resolve_with_ui_v2",
+    "deskpane_music_volume_v1",
+    "deskpane_explorer_shell_launch_v1",
+    "deskpane_quick_access_v1",
+    "deskpane_recycle_bin_v1"
 )
 if (Test-Path -LiteralPath $nativeDllPath -PathType Leaf) {
     . (Join-Path $PSScriptRoot "native-pe-contract.ps1")
-    $nativeContract = Get-DeskBoxNativePeContract `
+    $nativeContract = Get-DeskPaneNativePeContract `
         -Path $nativeDllPath `
         -ExpectedPlatform $ExpectedPlatform `
         -RequiredExports $nativeExports
@@ -332,9 +332,9 @@ if (Test-Path -LiteralPath $nativeDllPath -PathType Leaf) {
 $publishHashMatch = $null
 if (-not [string]::IsNullOrWhiteSpace($ExpectedPublishDirectory)) {
     $resolvedPublishDirectory = [System.IO.Path]::GetFullPath($ExpectedPublishDirectory)
-    $publishedExe = Join-Path $resolvedPublishDirectory "DeskBox.exe"
-    $publishedThumbnailProxy = Join-Path $resolvedPublishDirectory "DeskBox.ThumbnailProxy.exe"
-    $publishedNative = Join-Path $resolvedPublishDirectory "deskbox_native.dll"
+    $publishedExe = Join-Path $resolvedPublishDirectory "DeskPane.exe"
+    $publishedThumbnailProxy = Join-Path $resolvedPublishDirectory "DeskPane.ThumbnailProxy.exe"
+    $publishedNative = Join-Path $resolvedPublishDirectory "deskpane_native.dll"
     if (-not (Test-Path -LiteralPath $publishedExe -PathType Leaf) -or
         -not (Test-Path -LiteralPath $publishedThumbnailProxy -PathType Leaf) -or
         -not (Test-Path -LiteralPath $publishedNative -PathType Leaf) -or
@@ -371,9 +371,9 @@ if (-not [string]::IsNullOrWhiteSpace($AppxSymPath)) {
             $archive.Dispose()
         }
         foreach ($requiredSymbol in @(
-                "DeskBox.pdb",
-                "DeskBox.ThumbnailProxy.pdb",
-                "deskbox_native.pdb")) {
+                "DeskPane.pdb",
+                "DeskPane.ThumbnailProxy.pdb",
+                "deskpane_native.pdb")) {
             if ($symbolEntries -notcontains $requiredSymbol) {
                 Add-AuditFailure "Required Native AOT symbol is missing from appxsym: '$requiredSymbol'."
             }

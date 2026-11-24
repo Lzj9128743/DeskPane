@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [Parameter(Mandatory)]
     [ValidateSet("x64", "ARM64")]
@@ -165,25 +165,25 @@ $directFiles | Set-Content -LiteralPath (Join-Path $OutputDirectory "direct-publ
     -Encoding utf8
 
 $directRequiredFiles = @(
-    "DeskBox.exe",
-    "DeskBox.Updater.exe",
-    "DeskBox.ThumbnailProxy.exe",
-    "deskbox_native.dll",
+    "DeskPane.exe",
+    "DeskPane.Updater.exe",
+    "DeskPane.ThumbnailProxy.exe",
+    "deskpane_native.dll",
     "EverythingSdk.dll",
     "Microsoft.UI.Input.dll",
     "Microsoft.ui.xaml.dll",
     "Microsoft.WindowsAppRuntime.dll",
     "Microsoft.WindowsAppRuntime.Insights.Resource.dll",
     "ThirdParty/Everything/LICENSE.txt",
-    "DeskBox.pri",
-    "DeskBox.InstallManifest.txt"
+    "DeskPane.pri",
+    "DeskPane.InstallManifest.txt"
 )
 $missingDirectFiles = @($directRequiredFiles | Where-Object { $directFiles -notcontains $_ })
 $directForbiddenPatterns = @(
     '\.pdb$',
-    '(^|/)DeskBox\.dll$',
-    '(^|/)DeskBox\.deps\.json$',
-    '(^|/)DeskBox\.runtimeconfig\.json$',
+    '(^|/)DeskPane\.dll$',
+    '(^|/)DeskPane\.deps\.json$',
+    '(^|/)DeskPane\.runtimeconfig\.json$',
     '(^|/)(?:coreclr|clrjit|hostfxr|hostpolicy)\.dll$',
     '(^|/)Assets/Store/',
     'store-assets-html'
@@ -207,10 +207,10 @@ if ($forbiddenDirectFiles.Count -gt 0) {
     throw "The Direct AOT publish contains forbidden files: $($forbiddenDirectFiles -join ', ')."
 }
 
-$deskBoxMachine = Get-PeMachine -Path (Join-Path $directPublishDirectory "DeskBox.exe")
-$updaterMachine = Get-PeMachine -Path (Join-Path $directPublishDirectory "DeskBox.Updater.exe")
+$deskBoxMachine = Get-PeMachine -Path (Join-Path $directPublishDirectory "DeskPane.exe")
+$updaterMachine = Get-PeMachine -Path (Join-Path $directPublishDirectory "DeskPane.Updater.exe")
 $thumbnailProxyMachine = Get-PeMachine -Path (
-    Join-Path $directPublishDirectory "DeskBox.ThumbnailProxy.exe")
+    Join-Path $directPublishDirectory "DeskPane.ThumbnailProxy.exe")
 $everythingSdkMachine = Get-PeMachine -Path (
     Join-Path $directPublishDirectory "EverythingSdk.dll")
 $windowsAppRuntimeInsightsMachine = Get-PeMachine -Path (
@@ -225,19 +225,19 @@ if ($deskBoxMachine -ne $expectedMachine -or
 
 . (Join-Path $PSScriptRoot "native-pe-contract.ps1")
 $nativeExports = @(
-    "deskbox_native_abi_version",
-    "deskbox_native_capabilities",
-    "deskbox_shortcut_read_v2",
-    "deskbox_shortcut_resolve_no_ui_v2",
-    "deskbox_shortcut_write_v2",
-    "deskbox_shortcut_resolve_with_ui_v2",
-    "deskbox_music_volume_v1",
-    "deskbox_explorer_shell_launch_v1",
-    "deskbox_quick_access_v1",
-    "deskbox_recycle_bin_v1"
+    "deskpane_native_abi_version",
+    "deskpane_native_capabilities",
+    "deskpane_shortcut_read_v2",
+    "deskpane_shortcut_resolve_no_ui_v2",
+    "deskpane_shortcut_write_v2",
+    "deskpane_shortcut_resolve_with_ui_v2",
+    "deskpane_music_volume_v1",
+    "deskpane_explorer_shell_launch_v1",
+    "deskpane_quick_access_v1",
+    "deskpane_recycle_bin_v1"
 )
-$nativeContract = Get-DeskBoxNativePeContract `
-    -Path (Join-Path $directPublishDirectory "deskbox_native.dll") `
+$nativeContract = Get-DeskPaneNativePeContract `
+    -Path (Join-Path $directPublishDirectory "deskpane_native.dll") `
     -ExpectedPlatform $Platform `
     -RequiredExports $nativeExports
 $vcImports = @(
@@ -252,10 +252,10 @@ if ($vcImports.Count -gt 0) {
 $installerOutputDirectory = Join-Path $OutputDirectory "direct-installer"
 New-Item -ItemType Directory -Path $installerOutputDirectory -Force | Out-Null
 $installerScript = if ($Platform -eq "ARM64") {
-    Join-Path $repoRoot "installer\DeskBox.arm64.iss"
+    Join-Path $repoRoot "installer\DeskPane.arm64.iss"
 }
 else {
-    Join-Path $repoRoot "installer\DeskBox.iss"
+    Join-Path $repoRoot "installer\DeskPane.iss"
 }
 $installerScriptText = Get-Content -LiteralPath $installerScript -Raw
 $installerBaseNameMatch = [regex]::Match(
@@ -267,7 +267,7 @@ $installerVersionMatch = [regex]::Match(
 if (-not $installerBaseNameMatch.Success -or -not $installerVersionMatch.Success) {
     throw "The Inno script does not expose MyAppOutputBaseName and MyAppVersion definitions."
 }
-# Keep the DeskBox_Setup_<version>_<arch>.exe shape: every released updater
+# Keep the DeskPane_Setup_<version>_<arch>.exe shape: every released updater
 # (1.4.3 and later) only accepts assets and manifest URLs ending in
 # "_x64.exe"/"_arm64.exe", and the distribution workflow publishes this exact
 # name to GitHub Releases and stable.json. Flavor suffixes break that contract.
@@ -279,8 +279,8 @@ $innoCompiler = Get-InnoCompilerPath
 $innoLogPath = Join-Path $OutputDirectory "inno-compile.log"
 $innoArguments = @(
     "/Qp",
-    "/DDeskBoxNativeAot=1",
-    "/DDeskBoxBundledRuntime=1",
+    "/DDeskPaneNativeAot=1",
+    "/DDeskPaneBundledRuntime=1",
     "/DMyAppReleaseDir=$directPublishDirectory",
     "/F$installerOutputBaseName",
     "/O$installerOutputDirectory",
@@ -334,7 +334,7 @@ if ($null -eq $msix -or $null -eq $appxSym -or $null -eq $msixUpload) {
 }
 
 $storePublishDirectory = Join-Path $repoRoot (
-    "src\DeskBox\bin\$Platform\$configuration\net10.0-windows10.0.22621.0\$runtimeIdentifier\publish")
+    "src\DeskPane\bin\$Platform\$configuration\net10.0-windows10.0.22621.0\$runtimeIdentifier\publish")
 $storeAuditDirectory = Join-Path $OutputDirectory "store-audit"
 & (Join-Path $PSScriptRoot "audit-store-native-aot-package.ps1") `
     -MsixPath $msix.FullName `

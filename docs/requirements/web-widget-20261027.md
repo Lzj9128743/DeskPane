@@ -11,19 +11,19 @@
 
 ### 1.1 产品定位
 
-网页格子不是「第 8 种格子」，而是 **DeskBox 的用户扩展平台**：HTML 即插件格式，WebView2 即沙箱与运行时，胶囊收纳体系即宿主。零售 NativeAOT 无法动态加载程序集，原生插件路线已被架构判死；WebView2 提供沙箱、进程外、AI 生成友好（HTML/JS 是所有大模型最擅长生成的目标格式）三重属性。多格子多窗口产品形态不变。
+网页格子不是「第 8 种格子」，而是 **DeskPane 的用户扩展平台**：HTML 即插件格式，WebView2 即沙箱与运行时，胶囊收纳体系即宿主。零售 NativeAOT 无法动态加载程序集，原生插件路线已被架构判死；WebView2 提供沙箱、进程外、AI 生成友好（HTML/JS 是所有大模型最擅长生成的目标格式）三重属性。多格子多窗口产品形态不变。
 
 ### 1.2 硬约束
 
 - 胶囊体系既有验收全部保留：hover 零卡顿展开、组员切换 150ms、边界动画 320ms 硬顶（`WidgetWindowBase.Collapse.cs`）。
 - 主进程 commit 目标增量 ≤10-15MB（N 个格子）：WebView2 全部重开销住在 msedgewebview2.exe 进程树，主进程只持控制器包装。
-- 零 AI 内置红线：DeskBox 本体不含 AI、零推送；AI 能力只有两条外挂路径——粘贴流（批 1）与 MCP（批 3）。
+- 零 AI 内置红线：DeskPane 本体不含 AI、零推送；AI 能力只有两条外挂路径——粘贴流（批 1）与 MCP（批 3）。
 - 工程门禁照常：13 语言 parity（一次提交加全）、NativeAOT 冒烟、全量测试绿、新 DispatcherTimer 必须登记 PerformanceLogger。
 
 ### 1.3 调研结论摘要（决策依据）
 
 - HTML/JS 插件运行时已被 uTools（3000-4000 插件）、Raycast（1000+，PR 审核制商店）、Wallpaper Engine（HTML5 壁纸+创意工坊）、Scriptable（JS 组件+awesome list 分发）四生态验证；「一句话生成 HTML 小工具」在国内已是大众行为。
-- DeskBox 自身社区存在「敢加AI就卸载」情绪 → 零打扰红线与「AI 只在你调用时参与」话术。
+- DeskPane 自身社区存在「敢加AI就卸载」情绪 → 零打扰红线与「AI 只在你调用时参与」话术。
 - 微软教训：小组件板（内容分发位+第三方门槛）与 Dev Home（独立仪表盘载体）均失败 → 格子必须长在用户桌面收纳体系里、创作入口必须当天能用；微软作业可抄：信任语法（默认关/显式同意/可见状态/可撤销）、sparkle+shimmer 视觉语法、Adaptive Cards 式声明 UI。
 - 商店风险分析：先当主编（策展制），别当运营商（开放上传平台化后置）。
 
@@ -37,7 +37,7 @@
 | 2 | 默认展开尺寸 | **360×480**（`WidgetManager.FeatureWidgets.cs:428-441` 加 case） |
 | 3 | 在线 URL | 批 1 放开，创建向导内带内存量级提示文案 |
 | 4 | 本地 HTML 网络策略 | 批 1 默认放行；格子右键可关（`Web.NetworkPolicy=Off`）；市场批（批 4）切换为 manifest 白名单 |
-| 5 | 存储隔离 | `PartitionId` 在 SDK 1.0.2651.64 / 1.0.3719.77 均不存在（桌面预研二进制证实，§6-S3）→ **采用 per-widget 独立虚拟主机名** `deskbox-{safeId}.local`：源隔离+存储隔离，代价是每格独立 renderer（~50-80MB，住在 msedgewebview2 树，不进主进程）；SDK 升级时复查分区 API |
+| 5 | 存储隔离 | `PartitionId` 在 SDK 1.0.2651.64 / 1.0.3719.77 均不存在（桌面预研二进制证实，§6-S3）→ **采用 per-widget 独立虚拟主机名** `deskpane-{safeId}.local`：源隔离+存储隔离，代价是每格独立 renderer（~50-80MB，住在 msedgewebview2 树，不进主进程）；SDK 升级时复查分区 API |
 | 6 | 命名 | `WidgetKind.Web` / 中文「网页格子」/ 图标 globe（`Assets/WidgetTitleIcons/web.svg`） |
 | 7 | Onboarding Step5 卡片 | 延批 2 |
 | 8 | 节奏 | 批 1 MVP（本方案 §4-§7）→ 批 2 契约+bridge+设置分区 → 批 3 MCP+skill → 批 4 模板+市场（Phase 1 编辑部模式） |
@@ -62,7 +62,7 @@
 | 职责 | 设计 |
 |---|---|
 | 共享 environment（懒建） | 首个网页格子物化时创建；user data folder 固定 `data/webview2-profile/`；**refcount 管理：最后一个网页格子销毁 → environment 释放 → msedgewebview2 进程树退出**（「关闭=完全回收」实现点） |
-| 虚拟主机 | `SetVirtualHostNameToFolderMapping("deskbox-{safeId}.local", …/{id}/web/)`，每格独立主机名 = 源隔离 + 存储隔离（拍板 5） |
+| 虚拟主机 | `SetVirtualHostNameToFolderMapping("deskpane-{safeId}.local", …/{id}/web/)`，每格独立主机名 = 源隔离 + 存储隔离（拍板 5） |
 | 网络策略挂点 | `WebResourceRequested` 处理器批 1 即存在；策略对象 per-widget、数据源 Metadata；批 1 默认 permissive（本地 HTML 放行、右键可关），市场批换白名单——**执行点先埋，将来只改策略不改管线** |
 | 状态控制 | per-widget `IsVisible`、`MemoryUsageTargetLevel`、`TrySuspend/TryResume`（SDK API 已二进制证实存在） |
 | 快照管线 | WebView2 自带 `CapturePreviewAsync`（能抓网页内容，绕开 RenderTargetBitmap 抓不到 HWND 的死穴）；胶囊解码宽度照抄 Glance 限流算法（`GlanceWidgetContentAdapter.cs:80-119`） |
@@ -114,9 +114,9 @@ Metadata 键（`WebWidgetSourceSettings` 存取器，照 `WeatherWidgetViewModeS
 ### 4.6 创建向导（批 1 最大新 UI）
 
 - 三 tab：**粘贴代码 / 本地文件 / 在线网址**；确定前实时预览（真 WebView2 渲染，可切深浅色）。
-- 「复制引导词」按钮：内置格子契约（视口尺寸/DPI/深浅色 CSS 变量 `--deskbox-*`/单文件约束），批 1 的质量开关。
+- 「复制引导词」按钮：内置格子契约（视口尺寸/DPI/深浅色 CSS 变量 `--deskpane-*`/单文件约束），批 1 的质量开关。
 - 轻量窗口载体（重命名窗/冲突窗一档），不用 ContentDialog 大表单。
-- `.deskboxw` 兼容预留：文件 tab 接受未来包格式（zip = index.html + manifest.json），解包走同一条管线。
+- `.deskpanew` 兼容预留：文件 tab 接受未来包格式（zip = index.html + manifest.json），解包走同一条管线。
 - 在线 tab 带内存量级提示文案（每个不同源网页 ≈100-300MB，住独立进程）。
 
 ### 4.7 资产与清理
@@ -147,7 +147,7 @@ HTML 及其资源落 `data/widget-assets/{id}/web/`；校验沿用 `WidgetTitleI
 
 ## 5. 市场预留（现在埋、批 4 用）
 
-1. **导入格式**：`.deskboxw` = zip（index.html + manifest.json{name/version/author/scaleMode/networkDomains[]}）→ manifest 映射 Metadata、资产解包 `web/`——与手选 HTML 同管线。
+1. **导入格式**：`.deskpanew` = zip（index.html + manifest.json{name/version/author/scaleMode/networkDomains[]}）→ manifest 映射 Metadata、资产解包 `web/`——与手选 HTML 同管线。
 2. **权限与签名接缝**：网络策略对象以 Metadata 为源（市场 manifest 直接填白名单）；预留 `IWebWidgetPackageVerifier` 空接口（签名校验批 4 接入）。
 3. **隔离地基批 1 即完成**（独立主机名），分享功能上线前无需数据迁移。
 4. **Phase 1 编辑部模式**：应用内市场 = 人工审核的 manifest 清单（JSON 索引）+ GitHub/官网 CDN 下载 + 签名校验 + kill switch；开放上传无限期后置（商店风险分析结论：先当主编，别当运营商）。
@@ -163,7 +163,7 @@ HTML 及其资源落 `data/widget-assets/{id}/web/`；校验沿用 `WidgetTitleI
 |---|---|---|
 | S1 | API 面与环境路由 | **PASS**。真实引用程序集 = NuGet 的 `Microsoft.Web.WebView2.Core.Projection.dll`（lib_manual 投影——既不是 net462 全版、也不是 WinUI.dll 内的残根；此前二进制字符串扫描扫错了文件，教训记入）。API 完整但命名有差异（见下表）。XAML 控件**无 env 注入属性** → 控件路径 UDF 统一走进程级 `WEBVIEW2_USER_DATA_FOLDER`（实测生效，EBWebView 落盘）；自宿主路径有 `CreateWithOptionsAsync(3参)` + Controller/CompositionController 全套可用 |
 | S2 | 宿主形态 | **窗口式（HWND 岛）实锤**：RenderTargetBitmap 只捕到 2 色 → 网页像素不在 XAML 合成树，**HWND 铁律 + 快照层策略为必需**（设计即按此写，零改动）。`DefaultBackgroundColor=Transparent` setter 通过，实际透明与否待目检（窗口式通常非真透明 → 胶囊内嵌活网页不可行，胶囊呈现=快照图，与设计一致） |
-| S3 | 虚拟主机与隔离 | **PASS**。`SetVirtualHostNameToFolderMapping(String,String,CoreWebView2HostResourceAccessKind)` 可用，a/b.deskbox.local 导航成功；**源隔离成立**（干净 UDF 下 B 读 A 的 probe=null、A 回读=A，两轮实证；上轮"FAIL"为残留数据假阳性）。**Bonus 发现：localStorage 跨进程重启持久** → 批 1 需补「删除格子=清该 origin 存储」闭环（ClearVirtualHostNameToFolderMapping + Profile 清理） |
+| S3 | 虚拟主机与隔离 | **PASS**。`SetVirtualHostNameToFolderMapping(String,String,CoreWebView2HostResourceAccessKind)` 可用，a/b.deskpane.local 导航成功；**源隔离成立**（干净 UDF 下 B 读 A 的 probe=null、A 回读=A，两轮实证；上轮"FAIL"为残留数据假阳性）。**Bonus 发现：localStorage 跨进程重启持久** → 批 1 需补「删除格子=清该 origin 存储」闭环（ClearVirtualHostNameToFolderMapping + Profile 清理） |
 | S4 | AOT | **PASS**。NativeAOT 发布（8.6MB 单文件）+ 运行时全部测试绿（CapturePreview 快照与 JIT 字节级一致）。工具链结论：须 MSVC **14.44.35207**（14.42 缺静态 CRT）+ `-p:IlcUseEnvironmentalTools=true` + VS 环境（PATH 里 MSVC bin 必须在 Git Bash 的 GNU link 之前），可用脚本 `publish-aot.cmd` 复现 |
 
 **成员命名差异表（投影 vs 独立 .NET SDK）**：`CreateWithOptionsAsync(3参)`↔独立版 `CreateAsync(3参)`；投影 `CreateAsync(0参)`；`SetVirtualHostNameToFolderMapping`（无 Async 后缀）；`TrySuspendAsync`/`IsSuspended` 直接在 CoreWebView2 上（控件路径可达，无需 Controller）；`Navigate(string)`；控件初始化事件名 `CoreWebView2Initialized`；另有 `ExecuteScriptWithResultAsync`/`NavigateWithWebResourceRequest`/`ScreenCaptureStarting` 等新 API。
@@ -191,9 +191,9 @@ HTML 及其资源落 `data/widget-assets/{id}/web/`；校验沿用 `WidgetTitleI
 
 ## 8. 批 2/3/4 路线概览
 
-- **批 2（契约+bridge+设置分区）**：CSS 变量与 `deskbox.*` bridge v1（storage/theme/widget/capture 四件套，存储已按主机名隔离天然达成）；`WebSettingsSlice` + 设置分区（Glance 实例管理范式 + IPC 五件套）；Onboarding Step5 卡片。
-- **批 3（MCP+skill）**：`DeskBox.Mcp.exe`（stdio MCP + 控制管，抄 SettingsIpc 管道模式）+ P0 工具面（create_web_widget/布局/Todo/随记）+ 信任三件套（确认卡/活跃指示/可撤销+审计）+ `deskbox-agent` skill 文档（含快照自检闭环 read_widget_snapshot）。
-- **批 4（模板+市场）**：3 个声明式原生模板（DeskBox 卡片，Adaptive Cards 思路）+ `.deskboxw` 导入导出 + 签名/kill switch + 官网画廊 + awesome 仓库。
+- **批 2（契约+bridge+设置分区）**：CSS 变量与 `deskpane.*` bridge v1（storage/theme/widget/capture 四件套，存储已按主机名隔离天然达成）；`WebSettingsSlice` + 设置分区（Glance 实例管理范式 + IPC 五件套）；Onboarding Step5 卡片。
+- **批 3（MCP+skill）**：`DeskPane.Mcp.exe`（stdio MCP + 控制管，抄 SettingsIpc 管道模式）+ P0 工具面（create_web_widget/布局/Todo/随记）+ 信任三件套（确认卡/活跃指示/可撤销+审计）+ `deskpane-agent` skill 文档（含快照自检闭环 read_widget_snapshot）。
+- **批 4（模板+市场）**：3 个声明式原生模板（DeskPane 卡片，Adaptive Cards 思路）+ `.deskpanew` 导入导出 + 签名/kill switch + 官网画廊 + awesome 仓库。
 
 ---
 

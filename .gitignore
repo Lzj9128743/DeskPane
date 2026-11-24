@@ -46,17 +46,17 @@ build_*.txt
 # CI test results
 .github-test-results-*/
 
-# Old website (replaced by deskbox-site)
+# Old website (replaced by deskpane-site)
 website/
 
 # Website source moved to private repository
-deskbox-site/
+deskpane-site/
 deploy.ps1
 ssh_run.ps1
 fail2ban-nginx.conf
-deskbox-site/node_modules/
-deskbox-site/.next/
-deskbox-site/out/
+deskpane-site/node_modules/
+deskpane-site/.next/
+deskpane-site/out/
 
 # Local backup patches
 backups/

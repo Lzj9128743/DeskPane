@@ -3,7 +3,7 @@
 - 日期：2026-10-25 起（长程自主批，Simon 批准计划在案）
 - 范围：`feat/160-kickoff` 领先 main 全部 79 提交 = 1.6.0 设置拆分线 45 条 + 1.5.9 发布线 34 条
 - 目标：逐功能域深挖 2-5 轮——查问题 + 评「冗余 vs 合理」，临时方案按实际需求合理化/重构；C 节债 ①②③④+R14 全部实施；最后本机全量自动化回归
-- 红线：零推送、零发版工程；`store-assets/` 永不动永不入库（backup-20261023 含真实用户数据）；自动化一律 `DESKBOX_DEV_DATA_ROOT` 隔离根（真实数据只以副本进场）；测试禁 AnyCPU
+- 红线：零推送、零发版工程；`store-assets/` 永不动永不入库（backup-20261023 含真实用户数据）；自动化一律 `DESKPANE_DEV_DATA_ROOT` 隔离根（真实数据只以副本进场）；测试禁 AnyCPU
 
 ## 工作假设（离场前呈报，一次）
 
@@ -39,11 +39,11 @@
 
 ## 阶段 0：基线锁定与基建（2026-10-25 完成）
 
-- [x] deskbox-dev skill 载入；batch-lifecycle（长程批/审查对码/深挖纪律）+ build-verify-loop 通读
+- [x] deskpane-dev skill 载入；batch-lifecycle（长程批/审查对码/深挖纪律）+ build-verify-loop 通读
 - [x] 全量测试基线：**5849/5849 绿**（0 失败 0 跳过，汇总行亲验，1m41s）
 - [x] aot-quickcheck 实测：基础模式绿；**-Harness 模式红——R10「脚本待修」债当场实锤并根治**。三层考古：①cmd /c 整开关引号经 bash→powershell -File 链穿透（MSB1006）；②改 rsp 后发现 dotnet CLI 自身的 rsp 解析剥值引号再按分号重切（MSB1008，转发命令行实锤裸 token）；③终解=MSBuild 官方分号转义 `%3B`（任何 shell 层不特殊），双模式复验 GREEN（45.6s）。脚本已修（skill 目录），判别式已回流 toolchain-survival.md
 - [x] dev-restart：构建 0 错误、canonical dll 时效门过（23:31:23）、PID 18648 规范路径、启动窗健康扫描 0 失败行
-- [x] 本账本建立；隔离根启动器 `%TEMP%\deskbox-review160\launch-isolated.ps1` + `stop-review.ps1`（语法校验过）
+- [x] 本账本建立；隔离根启动器 `%TEMP%\deskpane-review160\launch-isolated.ps1` + `stop-review.ps1`（语法校验过）
 - [x] 首批提交：docs/acceptance/ 三件 + 本账本
 
 ### 阶段 0 附记
@@ -124,10 +124,10 @@ r1-r3：四条写命令全链读码（宿主 SendLayoutWrite 权威切片合并+
 
 ## 阶段5 复用资产索引
 
-- 隔离根启动器/停止：`%TEMP%\deskbox-review160\launch-isolated.ps1`、`stop-review.ps1`（按路径杀，注意会杀 Simon 实例——定向清理用 PID）
+- 隔离根启动器/停止：`%TEMP%\deskpane-review160\launch-isolated.ps1`、`stop-review.ps1`（按路径杀，注意会杀 Simon 实例——定向清理用 PID）
 - SACL/boot 冒烟探针：`probe-sacl-bootready.ps1`（先清日志防陈旧行误读；定向按 PID 清理）
 - 管道复现脚本族：`pipe-repro*.ps1`（D7 考古用，可删）
-- R10 脚本库：`%TEMP%\deskbox-r10-accept\`（uia2/探针/repro/b10-nav/b12-final/内存矩阵）
+- R10 脚本库：`%TEMP%\deskpane-r10-accept\`（uia2/探针/repro/b10-nav/b12-final/内存矩阵）
 - 提交辅助：`git-commit.ps1`（Mimosa 绕行：数组拆分+消息文件）
 
 ## D8-D20：节组深审与修复（完成，探员四路+复核修复批）
@@ -162,7 +162,7 @@ r1-r3：四条写命令全链读码（宿主 SendLayoutWrite 权威切片合并+
 
 ## 阶段5 收口（真机回归与发布门）
 
-- **P5-1 生命周期 17/17 全绿**（原生管道 SACL 创建/boot 链/关窗即退/farewell CAS/两轮急关急开/看门狗 0.5s 跟随/双侧日志零异常；脚本=`%TEMP%\deskbox-review160\p5-1-lifecycle.ps1` 可复跑）。
+- **P5-1 生命周期 17/17 全绿**（原生管道 SACL 创建/boot 链/关窗即退/farewell CAS/两轮急关急开/看门狗 0.5s 跟随/双侧日志零异常；脚本=`%TEMP%\deskpane-review160\p5-1-lifecycle.ps1` 可复跑）。
 - **B12 复验**：R10 脚本能找到设置窗但密度组合框定位失效（R10 期脚本资产 vs 当前节结构漂移——脚本问题非产品问题；防抖机制有单测钉）。
 - **managed-ui 冒烟**：BasicReadOnly ✓ 绿。
 - **发布级 AOT 审计门：绿**（第四轮 rc=0 零 findings）。三处 conscious 重钉（fdd614be）：WMC1510 790→802 与 nameof 33→39 均归因 1.5.9 更新体验批 2492c517（10-22 20:53 落地晚于最后一次全审计 run16 10:31=**审计断档窗口**，非本跑回归；逐文件 diff 定位 SettingsWindow.xaml 23→35 实证）；外加冻结命令清单随死命令删除过期。**教训：全审计应随批跑，不能只跑 quickcheck。**

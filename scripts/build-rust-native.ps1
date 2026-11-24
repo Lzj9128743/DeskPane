@@ -1,4 +1,4 @@
-﻿[CmdletBinding()]
+[CmdletBinding()]
 param(
     [ValidateSet("x64", "ARM64")]
     [string]$Platform = "x64",
@@ -36,20 +36,20 @@ else {
     [System.IO.Path]::GetFullPath($CargoTargetDirectory)
 }
 $requiredArtifacts = @(
-    "deskbox_native.dll",
-    "deskbox_native.pdb"
+    "deskpane_native.dll",
+    "deskpane_native.pdb"
 )
 $requiredExportNames = @(
-    "deskbox_native_abi_version",
-    "deskbox_native_capabilities",
-    "deskbox_shortcut_read_v2",
-    "deskbox_shortcut_resolve_no_ui_v2",
-    "deskbox_shortcut_write_v2",
-    "deskbox_shortcut_resolve_with_ui_v2",
-    "deskbox_music_volume_v1",
-    "deskbox_explorer_shell_launch_v1",
-    "deskbox_quick_access_v1",
-    "deskbox_recycle_bin_v1"
+    "deskpane_native_abi_version",
+    "deskpane_native_capabilities",
+    "deskpane_shortcut_read_v2",
+    "deskpane_shortcut_resolve_no_ui_v2",
+    "deskpane_shortcut_write_v2",
+    "deskpane_shortcut_resolve_with_ui_v2",
+    "deskpane_music_volume_v1",
+    "deskpane_explorer_shell_launch_v1",
+    "deskpane_quick_access_v1",
+    "deskpane_recycle_bin_v1"
 )
 $peContractScript = Join-Path $PSScriptRoot "native-pe-contract.ps1"
 $arm64EnvironmentScript = Join-Path $PSScriptRoot "rust-arm64-msvc-environment.ps1"
@@ -86,7 +86,7 @@ if (-not $ValidateOnly.IsPresent) {
     $cargoArguments = @(
         "build",
         "--manifest-path", $manifestPath,
-        "--package", "deskbox-native",
+        "--package", "deskpane-native",
         "--locked",
         "--target", $targetTriple,
         "--target-dir", $cargoTargetRoot
@@ -97,9 +97,9 @@ if (-not $ValidateOnly.IsPresent) {
 
     $arm64EnvironmentState = $null
     if ($Platform -eq "ARM64") {
-        $arm64Toolchain = Get-DeskBoxArm64MsvcEnvironment
+        $arm64Toolchain = Get-DeskPaneArm64MsvcEnvironment
         $arm64EnvironmentState =
-            Enter-DeskBoxArm64MsvcEnvironment -Toolchain $arm64Toolchain
+            Enter-DeskPaneArm64MsvcEnvironment -Toolchain $arm64Toolchain
     }
 
     $previousCargoColor = [Environment]::GetEnvironmentVariable("CARGO_TERM_COLOR", "Process")
@@ -139,7 +139,7 @@ if (-not $ValidateOnly.IsPresent) {
             "Process")
         [Environment]::SetEnvironmentVariable("RUSTFLAGS", $previousRustFlags, "Process")
         if ($null -ne $arm64EnvironmentState) {
-            Exit-DeskBoxArm64MsvcEnvironment -State $arm64EnvironmentState
+            Exit-DeskPaneArm64MsvcEnvironment -State $arm64EnvironmentState
         }
     }
 
@@ -162,15 +162,15 @@ foreach ($artifactName in $requiredArtifacts) {
     }
 }
 
-if (-not ("DeskBoxNativeContractProbe" -as [type])) {
+if (-not ("DeskPaneNativeContractProbe" -as [type])) {
     Add-Type -TypeDefinition @"
 using System;
 using System.ComponentModel;
 using System.Runtime.InteropServices;
 
-public sealed class DeskBoxNativeContractInfo
+public sealed class DeskPaneNativeContractInfo
 {
-    public DeskBoxNativeContractInfo(uint abiVersion, ulong capabilities, string[] requiredExports)
+    public DeskPaneNativeContractInfo(uint abiVersion, ulong capabilities, string[] requiredExports)
     {
         AbiVersion = abiVersion;
         Capabilities = capabilities;
@@ -182,20 +182,20 @@ public sealed class DeskBoxNativeContractInfo
     public string[] RequiredExports { get; private set; }
 }
 
-public static class DeskBoxNativeContractProbe
+public static class DeskPaneNativeContractProbe
 {
     private static readonly string[] RequiredExportNames = new[]
     {
-        "deskbox_native_abi_version",
-        "deskbox_native_capabilities",
-        "deskbox_shortcut_read_v2",
-        "deskbox_shortcut_resolve_no_ui_v2",
-        "deskbox_shortcut_write_v2",
-        "deskbox_shortcut_resolve_with_ui_v2",
-        "deskbox_music_volume_v1",
-        "deskbox_explorer_shell_launch_v1",
-        "deskbox_quick_access_v1",
-        "deskbox_recycle_bin_v1"
+        "deskpane_native_abi_version",
+        "deskpane_native_capabilities",
+        "deskpane_shortcut_read_v2",
+        "deskpane_shortcut_resolve_no_ui_v2",
+        "deskpane_shortcut_write_v2",
+        "deskpane_shortcut_resolve_with_ui_v2",
+        "deskpane_music_volume_v1",
+        "deskpane_explorer_shell_launch_v1",
+        "deskpane_quick_access_v1",
+        "deskpane_recycle_bin_v1"
     };
 
     [UnmanagedFunctionPointer(CallingConvention.Cdecl)]
@@ -214,7 +214,7 @@ public static class DeskBoxNativeContractProbe
     [return: MarshalAs(UnmanagedType.Bool)]
     private static extern bool FreeLibrary(IntPtr module);
 
-    public static DeskBoxNativeContractInfo ReadContract(string modulePath)
+    public static DeskPaneNativeContractInfo ReadContract(string modulePath)
     {
         const uint LoadLibrarySearchDllLoadDir = 0x00000100;
         const uint LoadLibrarySearchSystem32 = 0x00000800;
@@ -224,7 +224,7 @@ public static class DeskBoxNativeContractProbe
             LoadLibrarySearchDllLoadDir | LoadLibrarySearchSystem32);
         if (module == IntPtr.Zero)
         {
-            throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to load the DeskBox native module.");
+            throw new Win32Exception(Marshal.GetLastWin32Error(), "Unable to load the DeskPane native module.");
         }
 
         try
@@ -234,16 +234,16 @@ public static class DeskBoxNativeContractProbe
                 RequireExport(module, exportName);
             }
 
-            IntPtr abiExport = RequireExport(module, "deskbox_native_abi_version");
+            IntPtr abiExport = RequireExport(module, "deskpane_native_abi_version");
             var abiProbe = (AbiVersionDelegate)Marshal.GetDelegateForFunctionPointer(
                 abiExport,
                 typeof(AbiVersionDelegate));
-            IntPtr capabilitiesExport = RequireExport(module, "deskbox_native_capabilities");
+            IntPtr capabilitiesExport = RequireExport(module, "deskpane_native_capabilities");
             var capabilitiesProbe = (CapabilitiesDelegate)Marshal.GetDelegateForFunctionPointer(
                 capabilitiesExport,
                 typeof(CapabilitiesDelegate));
 
-            return new DeskBoxNativeContractInfo(
+            return new DeskPaneNativeContractInfo(
                 abiProbe(),
                 capabilitiesProbe(),
                 (string[])RequiredExportNames.Clone());
@@ -260,7 +260,7 @@ public static class DeskBoxNativeContractProbe
         if (export == IntPtr.Zero)
         {
             throw new EntryPointNotFoundException(
-                "The DeskBox native export '" + exportName + "' is missing.");
+                "The DeskPane native export '" + exportName + "' is missing.");
         }
 
         return export;
@@ -269,8 +269,8 @@ public static class DeskBoxNativeContractProbe
 "@
 }
 
-$copiedDll = Join-Path $outputRoot "deskbox_native.dll"
-$peContract = Get-DeskBoxNativePeContract `
+$copiedDll = Join-Path $outputRoot "deskpane_native.dll"
+$peContract = Get-DeskPaneNativePeContract `
     -Path $copiedDll `
     -ExpectedPlatform $Platform `
     -RequiredExports $requiredExportNames
@@ -300,24 +300,24 @@ else {
 }
 
 if ($runtimeProbeExecuted) {
-    $contract = [DeskBoxNativeContractProbe]::ReadContract($copiedDll)
+    $contract = [DeskPaneNativeContractProbe]::ReadContract($copiedDll)
     $abiVersion = $contract.AbiVersion
     $capabilities = $contract.Capabilities
     $requiredExports = @($contract.RequiredExports)
 }
 else {
-    $header = Get-Content -LiteralPath (Join-Path $repoRoot "native\include\deskbox_native.h") -Raw
-    $rustSource = Get-Content -LiteralPath (Join-Path $repoRoot "native\deskbox-native\src\lib.rs") -Raw
+    $header = Get-Content -LiteralPath (Join-Path $repoRoot "native\include\deskpane_native.h") -Raw
+    $rustSource = Get-Content -LiteralPath (Join-Path $repoRoot "native\deskpane-native\src\lib.rs") -Raw
     foreach ($token in @(
-            "#define DESKBOX_NATIVE_ABI_VERSION 2u",
-            "#define DESKBOX_NATIVE_CAPABILITIES DESKBOX_NATIVE_CAPABILITIES_STAGE_5B4C1B1")) {
+            "#define DESKPANE_NATIVE_ABI_VERSION 2u",
+            "#define DESKPANE_NATIVE_CAPABILITIES DESKPANE_NATIVE_CAPABILITIES_STAGE_5B4C1B1")) {
         if ($header.IndexOf($token, [System.StringComparison]::Ordinal) -lt 0) {
             throw "Rust native frozen header contract is missing '$token'."
         }
     }
     foreach ($token in @(
-            "pub const DESKBOX_NATIVE_ABI_VERSION: u32 = 2;",
-            "pub const DESKBOX_NATIVE_CAPABILITY_RECYCLE_BIN_V1: u64 = 1 << 8;")) {
+            "pub const DESKPANE_NATIVE_ABI_VERSION: u32 = 2;",
+            "pub const DESKPANE_NATIVE_CAPABILITY_RECYCLE_BIN_V1: u64 = 1 << 8;")) {
         if ($rustSource.IndexOf($token, [System.StringComparison]::Ordinal) -lt 0) {
             throw "Rust native frozen source contract is missing '$token'."
         }
@@ -360,5 +360,5 @@ if ($capabilities -ne 511) {
     ExpectedProcessArchitecture = $expectedProcessArchitecture
     ValidationOnly = $ValidateOnly.IsPresent
     Dll = $copiedDll
-    Pdb = Join-Path $outputRoot "deskbox_native.pdb"
+    Pdb = Join-Path $outputRoot "deskpane_native.pdb"
 }

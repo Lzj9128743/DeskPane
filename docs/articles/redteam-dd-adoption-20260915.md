@@ -31,7 +31,7 @@
    - 任何一步失败：立即停止、**不写** `SchemaVersion`、`anyApplied` 如实反映、向上抛出（或至少返回失败让调用方不保存半迁移状态——需要与 `SettingsService.LoadAsync` 的恢复语义（ResilientJsonStore .bak 回退）对齐设计）；
    - 配故障注入测试：每一步 migration 人为抛异常，断言后续步骤不执行、SchemaVersion 不前进（报告 Term Sheet 条件一的验收形态）。
 2. **P1 更新真实性 → 拆成"便宜立即项 + 决策项"**：
-   - 立即项（代码级，建议并入 Round 2.5）：`IsManifestUsable` 强制 HTTPS + 域名白名单（deskbox.fun / github.com）——把报告 §3 指出的缺口先堵一半；
+   - 立即项（代码级，建议并入 Round 2.5）：`IsManifestUsable` 强制 HTTPS + 域名白名单（deskpane.fun / github.com）——把报告 §3 指出的缺口先堵一半；
    - 决策项（Simon 拍板，涉及成本与流程）：Authenticode 签名 + updater 固定 publisher 校验 + signed manifest（minisign/TUF 风格）+ SBOM/provenance。企业版前为硬门槛，消费级可分期。
 3. **P1 release gate 治理 → 决策项**：把 distribution-audit（x64+ARM64+安装包审计）挂到 release tag 事件并设为不可绕过（required check）。机制已存在，只差组织强制——报告"能力已具备、未制度化"的判断准确。
 4. **P2 Settings mutable graph → 长期架构项**（mutation gateway / snapshot API），排在身份统一层之后，商业化前完成。当前"UI 线程约定"仍成立，不紧急。

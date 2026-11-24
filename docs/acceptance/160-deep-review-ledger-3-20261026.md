@@ -28,7 +28,7 @@ Simon 拍板「开始」后全部落地（批 R18-1/2/3 = 050dad21/ec978e6d/0d4a
 - **A-#24（050dad21）**：孤儿目录扫描 10 分钟 IPC 上界内联 UI 线程→池线程化。复核纠偏点：原登记把 27 处统称「冷路径」有事实偏差——B 类 2 处是暖路径（每次设置推送）、#24 违反自家 15s 有界契约。
 - **A-#27（050dad21）**：folder-watcher-health 死线整删（宿主零发送；真实消费走 app.runtime-health 面直读主进程）。
 - **A-#3（050dad21）**：GetRuntimeState 改推送喂缓存（构造 Prime+RegistrationChanged 失效+变更命令后刷新，R13-3 同款）。冻结棘轮 27→25。
-- **E-1（ec978e6d）**：图标 in-process 回退 registry-only 化——复核修正了原方案（迁 proxy 不对，正解=USEFILEATTRIBUTES，WIC pinned 先例同构）；GetShellItemIconPngBytes 死码删（最后能绑 handler 的 PIDL 形态）。「第三方 Shell 代码不进 DeskBox 进程」从菜单单点原则升级为不变量。
+- **E-1（ec978e6d）**：图标 in-process 回退 registry-only 化——复核修正了原方案（迁 proxy 不对，正解=USEFILEATTRIBUTES，WIC pinned 先例同构）；GetShellItemIconPngBytes 死码删（最后能绑 handler 的 PIDL 形态）。「第三方 Shell 代码不进 DeskPane 进程」从菜单单点原则升级为不变量。
 - **C（0d4a7830）**：批量「打开全部」>15 确认门（13 语言键）+QC 落盘按需化。**复核证伪**：「数百内容窗」不成立（内容窗按 widget 实例单例复用）；真实危害=混合选区 N 次 Shell 连发。
 - **D（0d4a7830）**：双计时器补全（nativeShellMs 搭车 DragProtocol）。**复核否决**了原探员方案（PointerPressed 预热=窗口双向无界+新鲜度绕回原点）；正确闭环=先测再拍板。
 

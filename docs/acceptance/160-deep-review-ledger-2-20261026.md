@@ -13,7 +13,7 @@
 | F4 | 整理与规则：OrganizerService+DesktopAutoOrganizationWatcher+OrganizationHistory+RestoreMachineLocalPathRebase+MoveAll undo | ⬜ |
 | F5 | widget 内容：TodoWidgetContent 全部+QuickCapture runtime+MusicWidgetContent(SMTC)+Weather+GlanceWidgetStore | ⬜ |
 | F6 | 搜索全家：SearchPopupWindow+SearchEngineService+EverythingSearchService+SearchHotkeyService+GlobalHotkeyService 核心+ResizeGuideOverlay/snap+DesktopDoubleClick | ⬜ |
-| F7 | 备份引擎+更新器：DataBackupService+CloudBackupService+BackupRuntime 主侧+AppUpdateService 核心+DeskBox.Updater 进程+installer iss | ⬜ |
+| F7 | 备份引擎+更新器：DataBackupService+CloudBackupService+BackupRuntime 主侧+AppUpdateService 核心+DeskPane.Updater 进程+installer iss | ⬜ |
 | F8 | 平台层：Win32Helper+ThemeService+UiDispatch+DragDropPermissionService+DisplayTopology+JumpList+StartupService+WidgetTitleIconAssetStore+LocalizationService 核心 | ⬜ |
 | F9 | 托盘+主壳杂项：App.Tray+onboarding 接线+工作集修剪+lifeline 细节 | ⬜ |
 

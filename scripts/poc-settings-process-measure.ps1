@@ -1,12 +1,12 @@
 # Phase 0 PoC measurement for the settings-process split (1.6.0 batch 1).
-# Spawns DeskBox.exe --settings-poc, times spawn-to-first-activation, samples
+# Spawns DeskPane.exe --settings-poc, times spawn-to-first-activation, samples
 # the process memory, closes the window (validating close-exits-process), and
 # optionally measures the in-proc comparison: how much memory the current
 # single-process settings window adds to the main instance.
 #
 # Usage:
-#   pwsh scripts/poc-settings-process-measure.ps1 -ExePath <DeskBox.exe> [-Iterations 3] [-IncludeInProc]
-# Requires: the main DeskBox instance already running (for the in-proc part),
+#   pwsh scripts/poc-settings-process-measure.ps1 -ExePath <DeskPane.exe> [-Iterations 3] [-IncludeInProc]
+# Requires: the main DeskPane instance already running (for the in-proc part),
 # PowerShell 7 (pwsh) for DateTimeOffset parsing convenience.
 
 param(
@@ -17,10 +17,10 @@ param(
 )
 
 $ErrorActionPreference = 'Stop'
-$pocLog = Join-Path ([System.IO.Path]::GetTempPath()) 'deskbox-settings-host.log'
+$pocLog = Join-Path ([System.IO.Path]::GetTempPath()) 'deskpane-settings-host.log'
 
 function Get-MainProcess {
-    Get-Process DeskBox -ErrorAction SilentlyContinue |
+    Get-Process DeskPane -ErrorAction SilentlyContinue |
         Where-Object { -not $_.HasExited } |
         Sort-Object StartTime |
         Select-Object -First 1

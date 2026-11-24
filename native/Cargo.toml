@@ -1,7 +1,7 @@
 [workspace]
 members = [
-    "deskbox-native",
-    "deskbox-thumbnail-proxy",
+    "deskpane-native",
+    "deskpane-thumbnail-proxy",
 ]
 resolver = "3"
 

@@ -1,4 +1,4 @@
-# DeskBox 内存占用归因与优化方案（2026-10-27）
+# DeskPane 内存占用归因与优化方案（2026-10-27）
 
 ## 结论速览
 
@@ -11,9 +11,9 @@
 
 ## 测量方法
 
-- 构建：`.artifacts/aot-retail` 的 Native AOT 零售产物，复制到 `%TEMP%\deskbox-aot-run` 运行（仓库路径下的进程会被 repo-owned 清理误杀）。
-- 数据根：`%TEMP%\deskbox-memattr-data`（复制自生产 `%LOCALAPPDATA%\DeskBox` 的 12 格子真实配置），经 `DESKBOX_AOT_PREVIEW_DATA_ROOT` 隔离。
-- 口径：`DESKBOX_PERF_LOG=1` 的应用内 `[Perf] MemorySample` + `Get-Process` 采样，启动后 ~50s 稳态读数。**Private（提交）为主口径**，WS 受工作集裁剪影响仅参考。
+- 构建：`.artifacts/aot-retail` 的 Native AOT 零售产物，复制到 `%TEMP%\deskpane-aot-run` 运行（仓库路径下的进程会被 repo-owned 清理误杀）。
+- 数据根：`%TEMP%\deskpane-memattr-data`（复制自生产 `%LOCALAPPDATA%\DeskPane` 的 12 格子真实配置），经 `DESKPANE_AOT_PREVIEW_DATA_ROOT` 隔离。
+- 口径：`DESKPANE_PERF_LOG=1` 的应用内 `[Perf] MemorySample` + `Get-Process` 采样，启动后 ~50s 稳态读数。**Private（提交）为主口径**，WS 受工作集裁剪影响仅参考。
 - 对照变量：同一构建、同一数据根，仅改 `widget-layout.json` 的 `layout.widgets`（注意不是顶层 `widgets`——顶层不存在该键）。
 - 测量陷阱记录：
   1. `SettingsService.cs` 规范化会把所有非 Glance 格子的 `IsDisabled` 强制改回 `false`，靠禁用做对照无效；需**清空 widgets 列表 + 写入 deletedWidgetIds 墓碑**。

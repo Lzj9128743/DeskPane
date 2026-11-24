@@ -4,10 +4,10 @@
 
 ## 测量条件
 
-- 1.5.9 = `C:\Program Files\DeskBox`（已安装零售，x64，就是线上终包）
+- 1.5.9 = `C:\Program Files\DeskPane`（已安装零售，x64，就是线上终包）
 - 1.6.0 = `feat/160-kickoff @ 865b0274` 零售 AOT 自包含发布（`.artifacts\aot-retail\win-x64\publish`，版本号未 bump 仍报 1.5.9）
 - 两版本顺序跑、同一台机（1920×1080）、全新数据根走完新手引导（功能开关全关=纯文件格子默认集）、同等闲置时长（~9 分钟）后取数
-- 隔离手段：1.5.9 无环境变量支持 → 临时改名真实数据目录（前后 136 文件 SHA256 全等证零触碰）；1.6.0 用 `DESKBOX_AOT_PREVIEW_DATA_ROOT`（注意：零售 AOT 认的是这个，不是 Debug 的 `DESKBOX_DEV_DATA_ROOT`——条件编译分叉）
+- 隔离手段：1.5.9 无环境变量支持 → 临时改名真实数据目录（前后 136 文件 SHA256 全等证零触碰）；1.6.0 用 `DESKPANE_AOT_PREVIEW_DATA_ROOT`（注意：零售 AOT 认的是这个，不是 Debug 的 `DESKPANE_DEV_DATA_ROOT`——条件编译分叉）
 - 指标：Private（commit，稳定口径）/ WS（受修剪时点影响仅参考）/ 线程数。场景②=打开设置逐节访问 5 个分节后关窗，等 90 秒
 
 ## 矩阵结果
@@ -30,4 +30,4 @@
 
 ## 复现脚本与证据
 
-`%TEMP%\deskbox-r10-accept\mem-matrix\`（start-160.ps1 / open-160.ps1 / real-before.sha / real-after.sha）。
+`%TEMP%\deskpane-r10-accept\mem-matrix\`（start-160.ps1 / open-160.ps1 / real-before.sha / real-after.sha）。

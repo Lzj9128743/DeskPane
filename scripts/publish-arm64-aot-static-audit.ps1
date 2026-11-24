@@ -17,8 +17,8 @@ $processArchitecture =
     [System.Runtime.InteropServices.RuntimeInformation]::ProcessArchitecture
 
 $repoRoot = [System.IO.Path]::GetFullPath((Join-Path $PSScriptRoot ".."))
-$project = Join-Path $repoRoot "src\DeskBox\DeskBox.csproj"
-$updaterProject = Join-Path $repoRoot "src\DeskBox.Updater\DeskBox.Updater.csproj"
+$project = Join-Path $repoRoot "src\DeskPane\DeskPane.csproj"
+$updaterProject = Join-Path $repoRoot "src\DeskPane.Updater\DeskPane.Updater.csproj"
 $peContractScript = Join-Path $PSScriptRoot "native-pe-contract.ps1"
 $arm64EnvironmentScript = Join-Path $PSScriptRoot "rust-arm64-msvc-environment.ps1"
 $artifactRoot = [System.IO.Path]::GetFullPath(
@@ -208,7 +208,7 @@ function Get-Arm64ToolchainState {
     }
     $msvcEnvironment = $null
     try {
-        $msvcEnvironment = Get-DeskBoxArm64MsvcEnvironment
+        $msvcEnvironment = Get-DeskPaneArm64MsvcEnvironment
     }
     catch {
         $missing.Add($_.Exception.Message.TrimEnd('.'))
@@ -266,11 +266,11 @@ New-Item -ItemType Directory -Path $symbolsDir -Force | Out-Null
 $commonProperties = @(
     "-p:Platform=$platform",
     "-p:RuntimeIdentifier=$runtimeIdentifier",
-    "-p:DeskBoxDistribution=Direct",
-    "-p:DeskBoxAotAudit=true",
-    "-p:DeskBoxAotSmokeHarness=true",
+    "-p:DeskPaneDistribution=Direct",
+    "-p:DeskPaneAotAudit=true",
+    "-p:DeskPaneAotSmokeHarness=true",
     "-p:PublishAot=true",
-    "-p:DeskBoxRustNative=true",
+    "-p:DeskPaneRustNative=true",
     "-p:JsonSerializerIsReflectionEnabledByDefault=false",
     "-p:IlcUseEnvironmentalTools=true",
     "-p:SelfContained=true",
@@ -280,7 +280,7 @@ $commonProperties = @(
 $previousCliLanguage = [Environment]::GetEnvironmentVariable("DOTNET_CLI_UI_LANGUAGE", "Process")
 $previousNoLogo = [Environment]::GetEnvironmentVariable("DOTNET_NOLOGO", "Process")
 $arm64EnvironmentState =
-    Enter-DeskBoxArm64MsvcEnvironment -Toolchain $toolchain.MsvcEnvironment
+    Enter-DeskPaneArm64MsvcEnvironment -Toolchain $toolchain.MsvcEnvironment
 try {
     [Environment]::SetEnvironmentVariable("DOTNET_CLI_UI_LANGUAGE", "en-US", "Process")
     [Environment]::SetEnvironmentVariable("DOTNET_NOLOGO", "1", "Process")
@@ -304,8 +304,8 @@ try {
         "--output", $publishDir,
         "--artifacts-path", $buildArtifactsDir,
         "--no-restore",
-        "-p:DeskBoxRustNativeIntermediateDir=$rustIntermediateDir",
-        "-p:DeskBoxRustNativeCargoTargetDir=$rustCargoTargetDir",
+        "-p:DeskPaneRustNativeIntermediateDir=$rustIntermediateDir",
+        "-p:DeskPaneRustNativeCargoTargetDir=$rustCargoTargetDir",
         "-p:PublishSingleFile=false",
         "-v:minimal"
     ) + $commonProperties
@@ -317,7 +317,7 @@ try {
 finally {
     [Environment]::SetEnvironmentVariable("DOTNET_CLI_UI_LANGUAGE", $previousCliLanguage, "Process")
     [Environment]::SetEnvironmentVariable("DOTNET_NOLOGO", $previousNoLogo, "Process")
-    Exit-DeskBoxArm64MsvcEnvironment -State $arm64EnvironmentState
+    Exit-DeskPaneArm64MsvcEnvironment -State $arm64EnvironmentState
 }
 
 $nativeValidation = & (Join-Path $PSScriptRoot "build-rust-native.ps1") `
@@ -343,11 +343,11 @@ else {
 }
 
 $requiredFiles = @(
-    "DeskBox.exe",
-    "DeskBox.Updater.exe",
-    "DeskBox.ThumbnailProxy.exe",
-    "DeskBox.pri",
-    "deskbox_native.dll"
+    "DeskPane.exe",
+    "DeskPane.Updater.exe",
+    "DeskPane.ThumbnailProxy.exe",
+    "DeskPane.pri",
+    "deskpane_native.dll"
 )
 foreach ($requiredFile in $requiredFiles) {
     if (-not (Test-Path -LiteralPath (Join-Path $publishDir $requiredFile) -PathType Leaf)) {
@@ -356,8 +356,8 @@ foreach ($requiredFile in $requiredFiles) {
 }
 
 foreach ($moduleName in @(
-        "DeskBox.ThumbnailProxy.exe",
-        "deskbox_native.dll")) {
+        "DeskPane.ThumbnailProxy.exe",
+        "deskpane_native.dll")) {
     $matches = @(Get-ChildItem -LiteralPath $publishDir -Filter $moduleName -File -Recurse)
     $expectedPath = [System.IO.Path]::GetFullPath((Join-Path $publishDir $moduleName))
     if ($matches.Count -ne 1 -or
@@ -370,9 +370,9 @@ foreach ($moduleName in @(
 }
 
 $nativeStagingSha256 =
-    (Get-FileHash -LiteralPath (Join-Path $rustIntermediateDir "deskbox_native.dll") -Algorithm SHA256).Hash
+    (Get-FileHash -LiteralPath (Join-Path $rustIntermediateDir "deskpane_native.dll") -Algorithm SHA256).Hash
 $nativePublishSha256 =
-    (Get-FileHash -LiteralPath (Join-Path $publishDir "deskbox_native.dll") -Algorithm SHA256).Hash
+    (Get-FileHash -LiteralPath (Join-Path $publishDir "deskpane_native.dll") -Algorithm SHA256).Hash
 if ($nativeStagingSha256 -cne $nativePublishSha256) {
     throw "ARM64 published Rust module does not match this run's isolated staging output."
 }
@@ -392,10 +392,10 @@ foreach ($pdb in $pdbFiles) {
 }
 $symbolFiles = @(Get-ChildItem -LiteralPath $symbolsDir -Filter "*.pdb" -File -Recurse)
 foreach ($requiredSymbol in @(
-        "DeskBox.pdb",
-        "DeskBox.Updater.pdb",
-        "DeskBox.ThumbnailProxy.pdb",
-        "deskbox_native.pdb")) {
+        "DeskPane.pdb",
+        "DeskPane.Updater.pdb",
+        "DeskPane.ThumbnailProxy.pdb",
+        "deskpane_native.pdb")) {
     if (-not ($symbolFiles | Where-Object Name -eq $requiredSymbol)) {
         throw "ARM64 symbols are missing '$requiredSymbol'."
     }
@@ -408,12 +408,12 @@ $forbiddenNames = @(
     "hostfxr.dll",
     "hostpolicy.dll",
     "System.Private.CoreLib.dll",
-    "DeskBox.dll",
-    "DeskBox.deps.json",
-    "DeskBox.runtimeconfig.json",
-    "DeskBox.Updater.dll",
-    "DeskBox.Updater.deps.json",
-    "DeskBox.Updater.runtimeconfig.json"
+    "DeskPane.dll",
+    "DeskPane.deps.json",
+    "DeskPane.runtimeconfig.json",
+    "DeskPane.Updater.dll",
+    "DeskPane.Updater.deps.json",
+    "DeskPane.Updater.runtimeconfig.json"
 )
 $forbiddenMatches = @($publishedFiles | Where-Object Name -in $forbiddenNames)
 if ($forbiddenMatches.Count -gt 0) {
@@ -425,10 +425,10 @@ if (@($publishedFiles | Where-Object Extension -eq ".pdb").Count -gt 0) {
 
 $peResults = @(
     foreach ($fileName in @(
-            "DeskBox.exe",
-            "DeskBox.Updater.exe",
-            "DeskBox.ThumbnailProxy.exe",
-            "deskbox_native.dll")) {
+            "DeskPane.exe",
+            "DeskPane.Updater.exe",
+            "DeskPane.ThumbnailProxy.exe",
+            "deskpane_native.dll")) {
         $path = Join-Path $publishDir $fileName
         $machine = Get-PeMachine -Path $path
         if ($machine -ne $expectedMachine) {
