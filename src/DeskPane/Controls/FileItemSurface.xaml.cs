@@ -239,10 +239,7 @@ public sealed partial class FileItemSurface : UserControl, INotifyPropertyChange
     public string ActivityStatusText =>
         IsTransferActive ? _transferStatusText : _openingStatusText;
 
-    public Visibility PathTooltipVisibility =>
-        LayoutContext?.ShowFileItemPathTooltips == true
-            ? Visibility.Visible
-            : Visibility.Collapsed;
+    public Visibility PathTooltipVisibility => Visibility.Collapsed;
 
     public bool ToolTipEnabled =>
         ActivityStatusVisibility == Visibility.Visible ||

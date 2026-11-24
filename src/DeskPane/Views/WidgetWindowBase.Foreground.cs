@@ -20,6 +20,13 @@ public abstract partial class WidgetWindowBase
         string mode = WidgetForegroundSettings.ResolveMode(
             Config,
             SettingsService.Settings);
+        bool isFullyTransparent =
+            SettingsService.Settings.WidgetMaterialType == SettingsService.WidgetMaterialTypeSolid &&
+            SettingsService.Settings.WidgetOpacity < 0.05;
+        if (isFullyTransparent && mode == WidgetForegroundSettings.ModeFollowTheme)
+        {
+            mode = WidgetForegroundSettings.ModeLight;
+        }
         Color customColor = WidgetForegroundSettings.ResolveCustomColor(
             Config,
             SettingsService.Settings);
