@@ -446,7 +446,7 @@ public sealed class SettingsService
     /// </summary>
     public static void ApplyDefaultPreferences(AppSettings settings)
     {
-        settings.Theme = "System";
+        settings.Theme = "Dark";
         settings.TrayIconStyle = "Colorful";
         settings.AccentColorMode = "System";
         settings.PerformanceMode = PerformanceSettingsPolicy.DefaultMode;
@@ -2851,7 +2851,7 @@ settings.FocusClickedWidgetOnRaise = false;
 
         if (settings.Theme is not ("System" or "Light" or "Dark"))
         {
-            settings.Theme = "System";
+            settings.Theme = "Dark";
             changed = true;
         }
 

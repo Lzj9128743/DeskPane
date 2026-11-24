@@ -92,8 +92,6 @@ public partial class App : Application
     private MenuFlyoutItem? _trayOrganizeDesktopItem;
     private MenuFlyoutItem? _trayRestoreDesktopFilesItem;
     private MenuFlyoutItem? _trayToggleDesktopIconsItem;
-    private MenuFlyoutItem? _trayMapFolderItem;
-    private MenuFlyoutItem? _trayToggleThemeItem;
     private MenuFlyoutSubItem? _trayOpacityMenu;
     private MenuFlyoutItem? _trayToggleLanguageItem;
     private MenuFlyoutItem? _trayAutoStartItem;
@@ -5142,18 +5140,5 @@ public partial class App : Application
         }
 
         return handles;
-    }
-
-    private void ToggleTheme()
-    {
-        var settings = SettingsService.Settings;
-        settings.Theme = settings.Theme switch
-        {
-            "Light" => "Dark",
-            "Dark" => "Light",
-            _ => "Light"
-        };
-        SettingsService.SaveDebounced();
-        ThemeService.RefreshAppearance();
     }
 }

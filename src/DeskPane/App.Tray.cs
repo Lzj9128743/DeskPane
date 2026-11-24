@@ -91,25 +91,6 @@ public partial class App
                 return Task.CompletedTask;
             }));
 
-        var mapFolderItem = CreateStyledTrayMenuItem(
-            localization.T("Common.NewFolderMapping"),
-            new SymbolIcon(Symbol.OpenFile));
-        AttachTrayMenuItemInteraction(
-            mapFolderItem,
-            () => RunTrayMenuActionAsync(contextMenu, CreateFolderWidgetFromPickerAsync));
-
-        var toggleThemeItem = CreateStyledTrayMenuItem(
-            string.Empty,
-            new FontIcon { Glyph = "\uE793" });
-        AttachTrayMenuItemInteraction(
-            toggleThemeItem,
-            () => RunTrayMenuActionAsync(contextMenu, () =>
-            {
-                ToggleTheme();
-                RefreshTrayMenuText();
-                return Task.CompletedTask;
-            }));
-
         var toggleLanguageItem = CreateStyledTrayMenuItem(
             string.Empty,
             new FontIcon { Glyph = "\uF2B7" });
@@ -166,9 +147,7 @@ public partial class App
             contextMenu.Items.Add(createItem);
         }
 
-        contextMenu.Items.Add(mapFolderItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
-        contextMenu.Items.Add(toggleThemeItem);
         var opacityMenu = WidgetOpacityMenuBuilder.Create(
             localization,
             SettingsService,
@@ -184,8 +163,6 @@ public partial class App
         _trayOrganizeDesktopItem = organizeDesktopItem;
         _trayRestoreDesktopFilesItem = restoreDesktopFilesItem;
         _trayToggleDesktopIconsItem = toggleNativeDesktopIconsItem;
-        _trayMapFolderItem = mapFolderItem;
-        _trayToggleThemeItem = toggleThemeItem;
         _trayOpacityMenu = opacityMenu;
         _trayToggleLanguageItem = toggleLanguageItem;
         _trayAutoStartItem = autoStartItem;
@@ -569,11 +546,6 @@ public partial class App
             item.IsEnabled = canCreateWidget;
         }
 
-        if (_trayMapFolderItem is not null)
-        {
-            _trayMapFolderItem.IsEnabled = canCreateWidget;
-        }
-
         contextMenu.MenuFlyoutPresenterStyle = CreateTrayMenuPresenterStyle();
     }
 
@@ -583,6 +555,7 @@ public partial class App
         {
             BasedOn = (Style)Resources[typeof(MenuFlyoutPresenter)]
         };
+        style.Setters.Add(new Setter(FrameworkElement.RequestedThemeProperty, ElementTheme.Light));
         style.Setters.Add(new Setter(ScrollViewer.VerticalScrollModeProperty, ScrollMode.Disabled));
         style.Setters.Add(new Setter(
             ScrollViewer.VerticalScrollBarVisibilityProperty,
@@ -617,6 +590,7 @@ public partial class App
             return;
         }
 
+        presenter.RequestedTheme = ElementTheme.Light;
         presenter.SetValue(ScrollViewer.VerticalScrollModeProperty, ScrollMode.Disabled);
         presenter.SetValue(
             ScrollViewer.VerticalScrollBarVisibilityProperty,
@@ -1166,23 +1140,10 @@ public partial class App
             };
         }
 
-        if (_trayMapFolderItem is not null)
-        {
-            _trayMapFolderItem.Text = LocalizationService.T("Common.NewFolderMapping");
-        }
-
         foreach (var (widgetKind, item) in _trayCreateWidgetItems)
         {
             var descriptor = new WidgetContentFactory(LocalizationService).GetDescriptor(widgetKind);
             item.Text = GetCreateEntryText(descriptor, LocalizationService);
-        }
-
-        if (_trayToggleThemeItem is not null)
-        {
-            bool isDark = IsDarkThemeActive();
-            _trayToggleThemeItem.Text = isDark
-                ? (isChinese ? "切换浅色主题" : "Switch to Light")
-                : (isChinese ? "切换深色主题" : "Switch to Dark");
         }
 
         if (_trayOpacityMenu is not null)

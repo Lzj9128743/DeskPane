@@ -8,7 +8,7 @@ public sealed class CoreSettingsSlice
     /// <summary>
     /// Application theme. Valid values: <c>"System"</c>, <c>"Light"</c>, <c>"Dark"</c>.
     /// </summary>
-    public string Theme { get; set; } = "System";
+    public string Theme { get; set; } = "Dark";
 
     /// <summary>
     /// Tray icon style. Valid values: <c>"System"</c>, <c>"Colorful"</c>, <c>"Black"</c>, <c>"White"</c>.

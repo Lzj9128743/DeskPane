@@ -55,31 +55,15 @@ public sealed class ThemeService : IDisposable
     }
 
     /// <summary>
-    /// Current effective theme based on settings.
+    /// Current effective theme (DeskPane widgets use Dark theme by default).
     /// </summary>
-    public ElementTheme CurrentTheme => _settingsService.Settings.Theme switch
-    {
-        "Light" => ElementTheme.Light,
-        "Dark" => ElementTheme.Dark,
-        _ => ElementTheme.Default
-    };
+    public ElementTheme CurrentTheme => ElementTheme.Dark;
 
     /// <summary>
-    /// The theme applied to window roots: the explicit override, or the
-    /// resolved system theme when following it. Themed lookups without an
-    /// element scope (for example a window that owns no tree yet) resolve
-    /// against this instead of the application theme, which tracks the system.
+    /// The theme applied to window roots: always Dark for DeskPane widgets,
+    /// while context menus explicitly opt into Light theme.
     /// </summary>
-    public ElementTheme EffectiveTheme
-    {
-        get
-        {
-            var theme = CurrentTheme;
-            return theme == ElementTheme.Default
-                ? (Win32Helper.IsSystemDarkMode() ? ElementTheme.Dark : ElementTheme.Light)
-                : theme;
-        }
-    }
+    public ElementTheme EffectiveTheme => ElementTheme.Dark;
 
     public bool UsesSystemAccentColor =>
         !string.Equals(_settingsService.Settings.AccentColorMode, AccentModeCustom, StringComparison.OrdinalIgnoreCase);
