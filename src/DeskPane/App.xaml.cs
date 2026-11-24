@@ -89,6 +89,7 @@ public partial class App : Application
     private bool _traySecondWindowSyncLogged;
     private MenuFlyoutItem? _trayOrganizeDesktopItem;
     private MenuFlyoutItem? _trayRestoreDesktopFilesItem;
+    private MenuFlyoutItem? _trayToggleWidgetsItem;
     private MenuFlyoutItem? _trayToggleDesktopIconsItem;
     private MenuFlyoutSubItem? _trayOpacityMenu;
     private MenuFlyoutItem? _trayToggleLanguageItem;

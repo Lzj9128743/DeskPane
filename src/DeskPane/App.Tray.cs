@@ -79,6 +79,20 @@ public partial class App
                 Log($"[Tray] Restored all staged desktop files count={restored}");
             }));
 
+        var toggleWidgetsItem = CreateStyledTrayMenuItem(
+            string.Empty,
+            new FontIcon { Glyph = "\uE8A9" });
+        AttachTrayMenuItemInteraction(
+            toggleWidgetsItem,
+            () => RunTrayMenuActionAsync(contextMenu, async () =>
+            {
+                if (WidgetManager is not null)
+                {
+                    await WidgetManager.SetAllWidgetsVisibleAsync(!WidgetManager.HasVisibleWidgets);
+                    RefreshTrayMenuText();
+                }
+            }));
+
         var toggleNativeDesktopIconsItem = CreateStyledTrayMenuItem(
             string.Empty,
             new FontIcon { Glyph = "\uE890" });
@@ -138,6 +152,7 @@ public partial class App
         _trayCreateWidgetItems.Clear();
         contextMenu.Items.Add(organizeDesktopItem);
         contextMenu.Items.Add(restoreDesktopFilesItem);
+        contextMenu.Items.Add(toggleWidgetsItem);
         contextMenu.Items.Add(toggleNativeDesktopIconsItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
         foreach (var descriptor in new WidgetContentFactory(LocalizationService).GetCreateEntryDescriptors())
@@ -162,6 +177,7 @@ public partial class App
 
         _trayOrganizeDesktopItem = organizeDesktopItem;
         _trayRestoreDesktopFilesItem = restoreDesktopFilesItem;
+        _trayToggleWidgetsItem = toggleWidgetsItem;
         _trayToggleDesktopIconsItem = toggleNativeDesktopIconsItem;
         _trayOpacityMenu = opacityMenu;
         _trayToggleLanguageItem = toggleLanguageItem;
@@ -1089,7 +1105,7 @@ public partial class App
         UpdateTrayLayerStateText(WidgetManager.WidgetsRaisedFromTray);
     }
 
-    private Task ToggleWidgetsFromDesktopDoubleClickAsync(
+    private async Task ToggleWidgetsFromDesktopDoubleClickAsync(
         DesktopDoubleClickSequence sequence)
     {
         if (WidgetManager is not null &&
@@ -1097,13 +1113,21 @@ public partial class App
         {
             Log(
                 "[DesktopDoubleClick] Consumed matching quick-reveal outside dismissal");
-            return Task.CompletedTask;
+            return;
         }
 
-        Log("[DesktopDoubleClick] Matched blank desktop sequence action=toggle-desktop-icons");
-        DesktopIconVisibilityService.ToggleDesktopIcons();
+        bool desktopIconsVisible = DesktopIconVisibilityService.AreDesktopIconsVisible() != false;
+        bool widgetsVisible = WidgetManager?.HasVisibleWidgets == true;
+        bool targetVisible = !(desktopIconsVisible || widgetsVisible);
+
+        Log($"[DesktopDoubleClick] Matched blank desktop sequence action=toggle-all targetVisible={targetVisible}");
+        DesktopIconVisibilityService.SetDesktopIconsVisible(targetVisible);
+        if (WidgetManager is not null)
+        {
+            await WidgetManager.SetAllWidgetsVisibleAsync(targetVisible);
+        }
+
         RefreshTrayMenuText();
-        return Task.CompletedTask;
     }
 
     private void UpdateTrayLayerStateText(bool raised)
@@ -1127,6 +1151,14 @@ public partial class App
             _trayRestoreDesktopFilesItem.Text = isChinese
                 ? "恢复全部文件到桌面"
                 : "Restore All to Desktop";
+        }
+
+        if (_trayToggleWidgetsItem is not null)
+        {
+            bool widgetsVisible = WidgetManager?.HasVisibleWidgets == true;
+            _trayToggleWidgetsItem.Text = widgetsVisible
+                ? (isChinese ? "隐藏格子" : "Hide Panes")
+                : (isChinese ? "显示格子" : "Show Panes");
         }
 
         if (_trayToggleDesktopIconsItem is not null)
