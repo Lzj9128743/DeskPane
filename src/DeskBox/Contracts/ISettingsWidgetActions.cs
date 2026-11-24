@@ -38,14 +38,6 @@ public interface ISettingsWidgetActions
     /// <summary>False when no widget manager exists (headless host).</summary>
     bool IsHostAvailable { get; }
 
-    // ── Feature widgets ─────────────────────────────────────────────
-
-    /// <summary>
-    /// Live enable state, falling back to the persisted setting when no
-    /// manager exists.
-    /// </summary>
-    bool IsFeatureWidgetEnabled(WidgetKind kind);
-
     /// <summary>
     /// Applies a settings-UI group-presentation edit (or reset) to the
     /// authoritative layout: assigns the six presentation fields on the
@@ -74,22 +66,6 @@ public interface ISettingsWidgetActions
     /// batch clear must ride this command (batch R8).
     /// </summary>
     Task ClearPerWidgetBackgrounds();
-
-    /// <summary>
-    /// The feature-widget switch write: records the enabled dictionary (the
-    /// MAIN process owns it — snapshots never carry it) and applies the
-    /// change through the live manager. One command so the dictionary write
-    /// and the widget apply can never diverge across processes. Returns the
-    /// applied authoritative value so a settings host can mirror its switch
-    /// UI without waiting for the (animation-delayed) reload push.
-    /// </summary>
-    Task<bool> SetFeatureWidgetEnabled(WidgetKind kind, bool enabled);
-
-    /// <summary>
-    /// Resets a feature widget to defaults through the live manager, falling
-    /// back to a plain settings save when no manager exists.
-    /// </summary>
-    Task ResetFeatureWidgetAsync(WidgetKind kind);
 
     void RefreshVisibleWidgetDesktopLayers(string reason);
 
@@ -125,21 +101,6 @@ public interface ISettingsWidgetActions
     Task<ManagedStorageMigrationResult> UpdateDefaultManagedStorageRootAsync(
         string newRootPath,
         ManagedStorageMigrationOptions? options);
-
-    // ── Glance instances ────────────────────────────────────────────
-
-    IReadOnlyList<GlanceWidgetInstanceInfo> GetGlanceWidgetInstances();
-
-    /// <summary>Whether the glance feature itself is enabled host-side.</summary>
-    bool IsGlanceFeatureEnabled { get; }
-
-    Task<GlanceWidgetInstanceInfo> CreateGlanceWidgetAsync(string? sourceWidgetId);
-
-    Task SetGlanceWidgetInstanceEnabledAsync(string widgetId, bool enabled);
-
-    Task<bool> LocateGlanceWidgetAsync(string widgetId);
-
-    Task RemoveGlanceWidgetAsync(string widgetId);
 
     Task RenameWidgetAsync(string widgetId, string newName);
 

@@ -1,4 +1,4 @@
-namespace DeskBox.Contracts;
+﻿namespace DeskBox.Contracts;
 
 /// <summary>
 /// Canonical widget layer-mode values, owned here so the interaction editor
@@ -39,7 +39,6 @@ public static class ShowDesktopBehaviors
 
 public readonly record struct InteractionSettingsSnapshot(
     bool AutoStart,
-    bool AutoCheckForUpdates,
     bool DoubleClickToOpen,
     bool FileItemSystemContextMenuEnabled,
     bool ResizeSnapEnabled,
@@ -107,10 +106,6 @@ public interface IInteractionSettings
     // Mirrors the registration-state reflection the settings page performed:
     // unchanged values skip the redundant save.
     void SetAutoStart(bool value);
-    void SetAutoCheckForUpdates(bool value);
-    void SetShowReleaseNotesAfterUpdate(bool value);
-    void SetAutoDownloadUpdates(bool value);
-    void SetShowUpdateToastNotification(bool value);
     void SetSilentStartup(bool value);
 
     void SetDoubleClickToOpen(bool value);

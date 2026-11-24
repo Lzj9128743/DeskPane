@@ -20,12 +20,6 @@ public sealed class CloudBackupSettingsSlice
     /// <summary>Account name; pairs with the vault-stored secret. Non-secret itself.</summary>
     public string CloudBackupUsername { get; set; } = string.Empty;
 
-    /// <summary>Independent toggle: todo data + its attachments.</summary>
-    public bool CloudBackupTodoDataEnabled { get; set; }
-
-    /// <summary>Independent toggle: quick-capture data + its attachments.</summary>
-    public bool CloudBackupQuickCaptureDataEnabled { get; set; }
-
     /// <summary>Independent toggle: widget style projection (never layout/positions).</summary>
     public bool CloudBackupWidgetStyleEnabled { get; set; }
 
@@ -69,8 +63,6 @@ public sealed class CloudBackupSettingsSlice
         CloudBackupServerUrl = other.CloudBackupServerUrl;
         CloudBackupRemotePath = other.CloudBackupRemotePath;
         CloudBackupUsername = other.CloudBackupUsername;
-        CloudBackupTodoDataEnabled = other.CloudBackupTodoDataEnabled;
-        CloudBackupQuickCaptureDataEnabled = other.CloudBackupQuickCaptureDataEnabled;
         CloudBackupWidgetStyleEnabled = other.CloudBackupWidgetStyleEnabled;
         CloudBackupRetentionCount = other.CloudBackupRetentionCount;
         CloudBackupIntervalMinutes = other.CloudBackupIntervalMinutes;

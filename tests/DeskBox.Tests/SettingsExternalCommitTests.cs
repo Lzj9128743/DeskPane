@@ -112,8 +112,6 @@ public sealed class SettingsExternalCommitTests : IDisposable
     {
         var main = new SettingsService(SettingsRoot);
         await main.LoadAsync();
-        var updateCheckAt = DateTimeOffset.UtcNow.AddDays(-1);
-        main.Settings.LastUpdateCheckAt = updateCheckAt;
         main.Settings.HasResolvedInitialFileWidgetSetup = true;
         await main.SaveAsync();
 
@@ -121,13 +119,11 @@ public sealed class SettingsExternalCommitTests : IDisposable
         // carries the stale values.
         var sink = new ForwardingSink();
         var host = new SettingsService(SettingsRoot, sink);
-        Assert.Null(host.Settings.LastUpdateCheckAt);
         Assert.False(host.Settings.HasResolvedInitialFileWidgetSetup);
         host.Settings.FileStacksEnabled = !host.Settings.FileStacksEnabled;
         Assert.True(await host.SaveCheckedAsync());
 
         Assert.True(await sink.PumpAsync(main));
-        Assert.Equal(updateCheckAt, main.Settings.LastUpdateCheckAt);
         Assert.True(main.Settings.HasResolvedInitialFileWidgetSetup);
     }
 
@@ -136,20 +132,10 @@ public sealed class SettingsExternalCommitTests : IDisposable
     {
         var main = new SettingsService(SettingsRoot);
         await main.LoadAsync();
-        // Live main-process layout state: the host snapshot was serialized
-        // before this state existed, exactly like a real settings-host
-        // session loaded before the user moved widgets around. The enabled
-        // dictionary itself is HOST-owned (its only writer is the settings
-        // UI), so the main process never mutates it out from under a host.
-        main.Settings.Widgets.Add(new WidgetConfig { Id = "w-live", WidgetKind = WidgetKind.Music });
+        main.Settings.Widgets.Add(new WidgetConfig { Id = "w-live", WidgetKind = WidgetKind.File });
 
-        // The host's dictionary drifted (stale false values from an older
-        // load): the snapshot must NOT carry it — feature switches travel as
-        // their own command now.
-        main.Settings.WidgetLayout.FeatureWidgetEnabledStates["Music"] = true;
         var host = new SettingsService(SettingsRoot);
         await host.LoadAsync();
-        host.Settings.WidgetLayout.FeatureWidgetEnabledStates["Music"] = false;
         Assert.DoesNotContain(host.Settings.Widgets, w => w.Id == "w-live");
         host.Settings.Theme = "Light";
 
@@ -158,9 +144,6 @@ public sealed class SettingsExternalCommitTests : IDisposable
             SettingsJsonContext.Default.AppSettings);
         Assert.True(await main.ApplyExternalSnapshotAsync(payload));
 
-        // The whole widget-layout domain — including the enabled dictionary —
-        // keeps the main process's authoritative values.
-        Assert.True(FeatureWidgetSettings.IsEnabled(main.Settings, WidgetKind.Music));
         Assert.Contains(main.Settings.Widgets, w => w.Id == "w-live");
         // The host's actual settings change landed.
         Assert.Equal("Light", main.Settings.Theme);
@@ -248,7 +231,7 @@ public sealed class SettingsExternalCommitTests : IDisposable
             {
                 int index = i;
                 main.MutateGraphUnderLock(() => main.Settings.Widgets.Add(
-                    new WidgetConfig { Id = "hammer-" + index.ToString(System.Globalization.CultureInfo.InvariantCulture), WidgetKind = WidgetKind.Music }));
+                    new WidgetConfig { Id = "hammer-" + index.ToString(System.Globalization.CultureInfo.InvariantCulture), WidgetKind = WidgetKind.File }));
             }
         });
 

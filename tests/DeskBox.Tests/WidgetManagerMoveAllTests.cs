@@ -29,9 +29,7 @@ public sealed class WidgetManagerMoveAllTests : IDisposable
             settingsService,
             fileService,
             TestOrganizerServices.Create(settingsService, fileService),
-            new ThemeService(settingsService),
-            new QuickCaptureService(
-                new QuickCaptureStore(Path.Combine(_root, "quick-capture"))),
+            new ThemeService(settingsService))),
             () => desktopPath,
             recycleManagedFolderDeletes: false);
         return new Harness(settingsService, manager);
@@ -93,7 +91,7 @@ public sealed class WidgetManagerMoveAllTests : IDisposable
         (_, WidgetMoveAllUndoToken token) =
             await harness.Manager.MoveAllWidgetSurfacesToDisplayAsync("screen-b");
 
-        // Any later user placement (single-surface move, drag commit, …)
+        // Any later user placement (single-surface move, drag commit, 鈥?
         // invalidates the snapshot (H3).
         await harness.Manager.MoveSurfaceToDisplayAsync("w1", "screen-c");
 
@@ -158,7 +156,7 @@ public sealed class WidgetManagerMoveAllTests : IDisposable
         // The batch runs UpdateWidget(notifySubscribers:false) per surface
         // and its debounced saves never notify, so the ONLY SettingsChanged
         // notification must come from the single trailing checked save (the
-        // old code saved — and notified — once per surface).
+        // old code saved 鈥?and notified 鈥?once per surface).
         int notifications = 0;
         harness.Settings.SettingsChanged += () => notifications++;
 

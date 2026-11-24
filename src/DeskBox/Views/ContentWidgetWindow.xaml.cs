@@ -54,7 +54,6 @@ public sealed partial class ContentWidgetWindow : WidgetWindowBase, IDesktopWidg
     private bool _isVisibleOnDesktop;
     private int _contentVisibilityGeneration;
     private int _queuedContentRevealGeneration = -1;
-    private SearchHistoryService? _subscribedSearchHistoryService;
 
     public ContentWidgetWindow(
         WidgetConfig config,
@@ -146,15 +145,6 @@ public sealed partial class ContentWidgetWindow : WidgetWindowBase, IDesktopWidg
         {
             FileWidgetContentAdapter file =>
                 CreateFileCompactPresentation(file, contentMode),
-            TodoWidgetContentAdapter todo => CreateTodoCompactPresentation(todo, contentMode, localization),
-            GlanceWidgetContentAdapter glance =>
-                CreateGlanceCompactPresentation(glance),
-            MusicWidgetContentAdapter music =>
-                CreateMusicCompactPresentation(music, contentMode),
-            QuickCaptureWidgetContentAdapter quickCapture =>
-                CreateQuickCaptureCompactPresentation(quickCapture, contentMode),
-            WeatherWidgetContentAdapter weather => CreateWeatherCompactPresentation(weather, contentMode),
-            SearchWidgetContentAdapter => CreateSearchCompactPresentation(contentMode, localization),
             _ => new WidgetCompactPresentation(
                 _titleViewModel.DisplayName,
                 string.Empty,
@@ -163,413 +153,6 @@ public sealed partial class ContentWidgetWindow : WidgetWindowBase, IDesktopWidg
                 EnableMarquee: true,
                 LiveStateKey: _titleViewModel.DisplayName)
         };
-    }
-
-    private WidgetCompactPresentation CreateGlanceCompactPresentation(
-        GlanceWidgetContentAdapter glance)
-    {
-        GlanceWidgetViewModel viewModel = glance.ViewModel;
-        string title = viewModel.ShowTime && !string.IsNullOrWhiteSpace(viewModel.TimeText)
-            ? viewModel.TimeText
-            : viewModel.ShowDate && !string.IsNullOrWhiteSpace(viewModel.DateText)
-                ? viewModel.DateText
-                : viewModel.ShowWeekday && !string.IsNullOrWhiteSpace(viewModel.WeekdayText)
-                    ? viewModel.WeekdayText
-                    : viewModel.HasTraditionalCalendar
-                        ? viewModel.TraditionalCalendarTitle
-                        : string.Empty;
-
-        var summaryParts = new List<string>(3);
-        if (viewModel.ShowDate &&
-            !string.IsNullOrWhiteSpace(viewModel.DateText) &&
-            !string.Equals(title, viewModel.DateText, StringComparison.Ordinal))
-        {
-            summaryParts.Add(viewModel.DateText);
-        }
-        if (viewModel.ShowWeekday && !string.IsNullOrWhiteSpace(viewModel.WeekdayText))
-        {
-            if (!string.Equals(title, viewModel.WeekdayText, StringComparison.Ordinal))
-            {
-                summaryParts.Add(viewModel.WeekdayText);
-            }
-        }
-        if (viewModel.HasTraditionalCalendar &&
-            !string.IsNullOrWhiteSpace(viewModel.TraditionalCalendarTitle) &&
-            !string.Equals(title, viewModel.TraditionalCalendarTitle, StringComparison.Ordinal))
-        {
-            summaryParts.Add(viewModel.TraditionalCalendarTitle);
-        }
-
-        string summary = string.Join(" · ", summaryParts);
-        bool hasText = !string.IsNullOrWhiteSpace(title) || !string.IsNullOrWhiteSpace(summary);
-        ImageSource? backgroundImage = viewModel.HasVisibleCurrentImage
-            ? glance.GetCompactBackgroundImage(
-                ResolveGlanceCompactBackgroundDecodeWidth())
-            : null;
-        return new WidgetCompactPresentation(
-            title,
-            summary,
-            _descriptor.DefaultGlyph,
-            string.Empty,
-            Thumbnail: backgroundImage,
-            UseStackedText: true,
-            EnableMarquee: true,
-            UseFullBleedBackground: backgroundImage is not null,
-            LiveStateKey: string.Join(
-                "|",
-                viewModel.TimeText,
-                viewModel.DateText,
-                viewModel.WeekdayText,
-                viewModel.TraditionalCalendarTitle,
-                viewModel.CurrentImagePath),
-            FullBleedOverlayOpacity: hasText ? viewModel.ReadabilityStrengthOpacity : 0,
-            UseUniformFullBleedOverlay: true,
-            FullBleedBackgroundOpacity: viewModel.BackgroundImageOpacity);
-    }
-
-    /// <summary>
-    /// Physical decode width for the glance capsule's full-bleed background:
-    /// the capsule's actual logical width (aligned mode tracks the panel,
-    /// otherwise the compact width) at the current DPI, with the same 1.25
-    /// headroom the expanded surface uses. The old fixed 768 under-decoded
-    /// wide capsules and paid ~3x on narrow ones.
-    /// </summary>
-    private int ResolveGlanceCompactBackgroundDecodeWidth()
-    {
-        double logicalWidth = UsesAlignedCompactWidth()
-            ? Config.Width
-            : Config.CompactWidth ?? WidgetCompactBoundsCalculator.SummaryWidth;
-        double scale = RootElement.XamlRoot?.RasterizationScale ?? 1;
-        if (!double.IsFinite(scale) || scale <= 0)
-        {
-            scale = 1;
-        }
-
-        double physicalWidth = logicalWidth * scale * GlanceImageDecodeSizeCalculator.CompactBackgroundSupersamplingFactor;
-        return (int)Math.Clamp(Math.Ceiling(physicalWidth), 320, 1600);
-    }
-
-    private WidgetCompactPresentation CreateSearchCompactPresentation(
-        string contentMode,
-        LocalizationService localization)
-    {
-        // Smart mode gets a dynamic subtitle so the search capsule matches the
-        // height/style of the weather/quick-capture capsules instead of looking
-        // bare. The subtitle shows the most recent query ("最近：xxx"); when there
-        // is no history (or history is disabled / sensitive content is hidden) it
-        // falls back to a static hint so the line never appears empty.
-        bool stacked = contentMode == SettingsService.WidgetCompactContentModeSmart;
-
-        string summary = string.Empty;
-        string recentKey = string.Empty;
-        if (stacked)
-        {
-            string? recent = null;
-            if (SettingsService.Settings.SearchSaveHistory &&
-                !SettingsService.Settings.WidgetCompactHideSensitiveContent)
-            {
-                recent = App.Current.SearchHistoryService?.RecentQueries.FirstOrDefault();
-            }
-
-            summary = string.IsNullOrWhiteSpace(recent)
-                ? localization.T("Search.Compact.Hint")
-                : localization.Format("Search.Compact.Recent", recent);
-            recentKey = recent ?? string.Empty;
-        }
-
-        return new WidgetCompactPresentation(
-            _titleViewModel.DisplayName,
-            summary,
-            _descriptor.DefaultGlyph,
-            localization.T("Widget.Compact.DropHint"),
-            ShowPrimaryAction: true,
-            PrimaryActionGlyph: "\uE721",
-            UseStackedText: stacked,
-            EnableMarquee: true,
-            LiveStateKey: string.Join("|", _titleViewModel.DisplayName, recentKey));
-    }
-
-    private WidgetCompactPresentation CreateMusicCompactPresentation(
-        MusicWidgetContentAdapter music,
-        string contentMode)
-    {
-        bool hidesSensitiveContent = WidgetCompactPrivacyPolicy.HidesSensitiveContent(
-            SettingsService.Settings.WidgetCompactHideSensitiveContent,
-            Config.WidgetKind);
-        string title = hidesSensitiveContent
-            ? _titleViewModel.DisplayName
-            : music.ViewModel.Title;
-        string summary = contentMode == SettingsService.WidgetCompactContentModeMinimal
-            ? string.Empty
-            : hidesSensitiveContent
-                ? music.ViewModel.StatusText
-                : music.ViewModel.Artist;
-
-        // Plain, determinate progress shown below the artist name inside the
-        // capsule. Mirrors the EXPANDED music view: the track is always
-        // visible while a session exists, and the fill grows from 0. Uses
-        // SeekValue/SeekMaximum (same source as the expanded view), so when
-        // the player hasn't reported a duration yet (common for streaming in
-        // the first ~40 s) SeekMaximum falls back to 1 and the fill reads 0
-        // — i.e. an empty-but-visible track, identical to the expanded view.
-        // Only when there is no session at all do we pass null (hide the bar).
-        double? musicProgress = null;
-        if (music.ViewModel.HasSession)
-        {
-            double max = music.ViewModel.SeekMaximum;
-            musicProgress = max > 0
-                ? Math.Clamp(music.ViewModel.SeekValue / max, 0, 1)
-                : 0;
-        }
-
-        return new WidgetCompactPresentation(
-            title,
-            summary,
-            _descriptor.DefaultGlyph,
-            string.Empty,
-            hidesSensitiveContent ? null : music.ViewModel.ThumbnailImage,
-            ShowMediaControls: contentMode == SettingsService.WidgetCompactContentModeSmart,
-            IsPlaying: music.ViewModel.IsPlaying,
-            CanGoPrevious: music.ViewModel.CanGoPrevious,
-            CanGoNext: music.ViewModel.CanGoNext,
-            UseStackedText: contentMode == SettingsService.WidgetCompactContentModeSmart,
-            EnableMarquee: !hidesSensitiveContent,
-            Progress: null,
-            IsProgressIndeterminate: false,
-            UseFullBleedBackground: !hidesSensitiveContent,
-            ShowSpectrum: !hidesSensitiveContent,
-            LiveStateKey: hidesSensitiveContent
-                ? string.Join(
-                    "|",
-                    music.ViewModel.PlaybackState,
-                    music.ViewModel.Duration.Ticks)
-                : string.Join(
-                    "|",
-                    music.ViewModel.Title,
-                    music.ViewModel.Artist,
-                    music.ViewModel.PlaybackState,
-                    music.ViewModel.Duration.Ticks),
-            ShowVinyl: !hidesSensitiveContent,
-            MusicProgress: musicProgress);
-    }
-
-    private WidgetCompactPresentation CreateWeatherCompactPresentation(
-        WeatherWidgetContentAdapter weather,
-        string contentMode)
-    {
-        bool isDay = weather.ViewModel.IsDay;
-        bool isAttention = IsCompactWeatherAttentionRequired(weather);
-        bool usesRichSkin = weather.ViewModel.UsesRichSkin;
-        Windows.UI.Color? colorStart = usesRichSkin
-            ? weather.ViewModel.RichBackdropTopColor
-            : null;
-        Windows.UI.Color? colorEnd = usesRichSkin
-            ? weather.ViewModel.RichBackdropBottomColor
-            : null;
-
-        return new WidgetCompactPresentation(
-            string.IsNullOrWhiteSpace(weather.ViewModel.CurrentTemperatureText)
-                ? _titleViewModel.DisplayName
-                : weather.ViewModel.CurrentTemperatureText,
-            BuildWeatherCompactSummary(weather, contentMode),
-            _descriptor.DefaultGlyph,
-            string.Empty,
-            UseStackedText: contentMode == SettingsService.WidgetCompactContentModeSmart,
-            EnableMarquee: true,
-            Progress: isAttention ? 1 : null,
-            IsAttention: isAttention,
-            IconImage: weather.ViewModel.CurrentIcon,
-            BackgroundColorStart: colorStart,
-            BackgroundColorEnd: colorEnd,
-            // Avoid the former 50 ms UI-thread particle timer (20 Canvas writes
-            // per tick). The condition-aware color field and emoji retain the
-            // weather identity without a permanent rendering tax.
-            ParticleKind: CompactParticleKind.None,
-            LiveStateKey: string.Join(
-                "|",
-                usesRichSkin,
-                weather.ViewModel.CurrentTemperatureText,
-                weather.ViewModel.CurrentDescription,
-                weather.ViewModel.PrecipitationText));
-    }
-
-    private WidgetCompactPresentation CreateTodoCompactPresentation(
-        TodoWidgetContentAdapter todo,
-        string contentMode,
-        LocalizationService localization)
-    {
-        if (SettingsService.Settings.WidgetCompactHideSensitiveContent &&
-            contentMode == SettingsService.WidgetCompactContentModeSmart)
-        {
-            contentMode = SettingsService.WidgetCompactContentModeSummary;
-        }
-
-        var nextItem = GetNextCompactTodoItem(todo);
-        int overdueCount = todo.ViewModel.Items.Count(item => item.IsOverdue);
-        string countSummary = localization.Format(
-            "Widget.Compact.TodoSummary",
-            todo.ViewModel.TodayFilterCount,
-            overdueCount);
-
-        WidgetCompactPresentation presentation = contentMode switch
-        {
-            SettingsService.WidgetCompactContentModeMinimal => new WidgetCompactPresentation(
-                _titleViewModel.DisplayName,
-                string.Empty,
-                _descriptor.DefaultGlyph,
-                localization.T("Widget.Compact.TodoDropHint")),
-            SettingsService.WidgetCompactContentModeSmart when nextItem is not null =>
-                new WidgetCompactPresentation(
-                    NormalizeCompactSingleLine(nextItem.Text),
-                    BuildCompactTodoDueSummary(nextItem, countSummary, localization),
-                    _descriptor.DefaultGlyph,
-                    localization.T("Widget.Compact.TodoDropHint"),
-                    ShowPrimaryAction: true),
-            _ => new WidgetCompactPresentation(
-                _titleViewModel.DisplayName,
-                countSummary,
-                _descriptor.DefaultGlyph,
-                localization.T("Widget.Compact.TodoDropHint"))
-        };
-
-        int totalCount = todo.ViewModel.Items.Count;
-        int completedCount = todo.ViewModel.CompletedCount;
-
-        return presentation with
-        {
-            // Todo text can be arbitrarily long; the capsule stays static
-            // instead of marqueeing (same policy as QuickCapture).
-            Progress = totalCount > 0
-                ? completedCount / (double)totalCount
-                : null,
-            IsAttention = overdueCount > 0,
-            LiveStateKey = string.Join(
-                "|",
-                nextItem?.Id ?? string.Empty,
-                nextItem?.Text ?? string.Empty,
-                completedCount,
-                totalCount,
-                overdueCount)
-        };
-    }
-
-    // GetMusicCompactProgress removed (deep review R17, G1 audit): zero
-    // callers — the music capsule progress was rewritten inline in
-    // CreateMusicCompactPresentation with the "0 when Duration unknown"
-    // semantics preserved there.
-
-    private static bool IsCompactWeatherAttentionRequired(WeatherWidgetContentAdapter weather)
-    {
-        int code = weather.ViewModel.CurrentWeatherCode;
-        return code is >= 51 and <= 67 or
-            >= 71 and <= 86 or
-            >= 95 and <= 99;
-    }
-
-    private static string NormalizeCompactSingleLine(string? text)
-    {
-        return string.Join(
-            " ",
-            (text ?? string.Empty).Split(
-                (char[]?)null,
-                StringSplitOptions.RemoveEmptyEntries | StringSplitOptions.TrimEntries));
-    }
-
-    private static string BuildCompactTodoDueSummary(
-        TodoItemViewModel item,
-        string fallback,
-        LocalizationService localization)
-    {
-        if (item.DueDate is not { } dueDate)
-        {
-            return fallback;
-        }
-
-        if (item.IsOverdue)
-        {
-            return localization.T("Todo.Due.OverdueSuffix");
-        }
-
-        DateTimeOffset localDueDate = dueDate.ToLocalTime();
-        DateTime today = DateTime.Today;
-        if (localDueDate.Date == today)
-        {
-            return localization.Format("Todo.Due.TodayAt", localDueDate.ToString("HH:mm"));
-        }
-
-        if (localDueDate.Date == today.AddDays(1))
-        {
-            return localization.Format("Todo.Due.TomorrowAt", localDueDate.ToString("HH:mm"));
-        }
-
-        return localDueDate.ToString("M/d");
-    }
-
-    private static TodoItemViewModel? GetNextCompactTodoItem(TodoWidgetContentAdapter todo) =>
-        todo.ViewModel.Items
-            .Where(item => !item.IsCompleted)
-            .OrderByDescending(item => item.IsOverdue)
-            .ThenByDescending(item => item.IsImportant)
-            .ThenBy(item => item.DueDate ?? DateTimeOffset.MaxValue)
-            .FirstOrDefault();
-
-    private static string BuildWeatherCompactSummary(
-        WeatherWidgetContentAdapter weather,
-        string contentMode)
-    {
-        if (contentMode == SettingsService.WidgetCompactContentModeMinimal)
-        {
-            return string.Empty;
-        }
-
-        string description = weather.ViewModel.CurrentDescription;
-        if (contentMode != SettingsService.WidgetCompactContentModeSmart ||
-            string.IsNullOrWhiteSpace(weather.ViewModel.PrecipitationText))
-        {
-            return description;
-        }
-
-        return string.IsNullOrWhiteSpace(description)
-            ? weather.ViewModel.PrecipitationText
-            : $"{description} · {weather.ViewModel.PrecipitationText}";
-    }
-
-    protected override async Task OnCompactPrimaryActionRequestedAsync()
-    {
-        if (CurrentContent is SearchWidgetContentAdapter)
-        {
-            App.Current.OpenSearchPopup();
-            return;
-        }
-
-        if (CurrentContent is not TodoWidgetContentAdapter todo ||
-            GetNextCompactTodoItem(todo) is not { } item)
-        {
-            return;
-        }
-
-        await todo.ViewModel.SetCompletedAsync(item.Id, true);
-    }
-
-    protected override Task OnCompactPreviousRequestedAsync()
-    {
-        return CurrentContent is MusicWidgetContentAdapter music
-            ? music.ViewModel.PreviousAsync()
-            : Task.CompletedTask;
-    }
-
-    protected override Task OnCompactPlayPauseRequestedAsync()
-    {
-        return CurrentContent is MusicWidgetContentAdapter music
-            ? music.ViewModel.TogglePlayPauseAsync()
-            : Task.CompletedTask;
-    }
-
-    protected override Task OnCompactNextRequestedAsync()
-    {
-        return CurrentContent is MusicWidgetContentAdapter music
-            ? music.ViewModel.NextAsync()
-            : Task.CompletedTask;
     }
 
     protected override void UpdateConfigBoundsFromPhysical(
@@ -699,12 +282,6 @@ public sealed partial class ContentWidgetWindow : WidgetWindowBase, IDesktopWidg
 
     protected override void OnCustomWidgetBackgroundChanged(bool active)
     {
-        // User-set background wins over the Glance surface's own background
-        // image (per-widget customization rule).
-        if (CurrentContent?.View is DeskBox.Controls.WidgetContents.GlanceWidgetContent glance)
-        {
-            glance.SetShellCustomBackgroundActive(active);
-        }
     }
 
     // ── IDesktopWidgetWindow implementation ────────────────────
@@ -1150,11 +727,6 @@ IsHideAnimationRunning = true;
         _compactPresentationSource = content switch
         {
             FileWidgetContentAdapter file => file.ViewModel,
-            TodoWidgetContentAdapter todo => todo.ViewModel,
-            GlanceWidgetContentAdapter glance => glance.ViewModel,
-            MusicWidgetContentAdapter music => music.ViewModel,
-            WeatherWidgetContentAdapter weather => weather.ViewModel,
-            QuickCaptureWidgetContentAdapter quickCapture => quickCapture.ViewModel,
             _ => null
         };
 
@@ -1162,34 +734,6 @@ IsHideAnimationRunning = true;
         {
             _compactPresentationSource.PropertyChanged += CompactPresentationSource_PropertyChanged;
         }
-
-        // The search capsule's dynamic subtitle ("最近：xxx") tracks the recent-query
-        // list, which has no INotifyPropertyChanged surface, so subscribe to the
-        // history service's change event to refresh the compact presentation live.
-        if (content is not SearchWidgetContentAdapter &&
-            _subscribedSearchHistoryService is { } previousHistoryService)
-        {
-            previousHistoryService.RecentQueriesChanged -= OnRecentQueriesChanged;
-            _subscribedSearchHistoryService = null;
-        }
-
-        if (content is SearchWidgetContentAdapter &&
-            App.Current.SearchHistoryService is { } historyService &&
-            !ReferenceEquals(_subscribedSearchHistoryService, historyService))
-        {
-            if (_subscribedSearchHistoryService is { } previousService)
-            {
-                previousService.RecentQueriesChanged -= OnRecentQueriesChanged;
-            }
-
-            historyService.RecentQueriesChanged += OnRecentQueriesChanged;
-            _subscribedSearchHistoryService = historyService;
-        }
-    }
-
-    private void OnRecentQueriesChanged()
-    {
-        QueueCompactPresentationRefresh();
     }
 
     private void CompactPresentationSource_PropertyChanged(object? sender, PropertyChangedEventArgs e)
@@ -1238,56 +782,7 @@ IsHideAnimationRunning = true;
 
     internal static bool IsCompactPresentationPropertyRelevant(
         WidgetKind widgetKind,
-        string? propertyName)
-    {
-        if (string.IsNullOrEmpty(propertyName))
-        {
-            return true;
-        }
-
-        return widgetKind switch
-        {
-            WidgetKind.Weather => propertyName is
-                nameof(WeatherWidgetViewModel.CurrentCondition) or
-                nameof(WeatherWidgetViewModel.IsDay) or
-                nameof(WeatherWidgetViewModel.UsesRichSkin) or
-                nameof(WeatherWidgetViewModel.RichSkinUsesLightText) or
-                nameof(WeatherWidgetViewModel.RichBackdropTopColor) or
-                nameof(WeatherWidgetViewModel.RichBackdropBottomColor) or
-                nameof(WeatherWidgetViewModel.CurrentWeatherCode) or
-                nameof(WeatherWidgetViewModel.CurrentTemperatureText) or
-                nameof(WeatherWidgetViewModel.CurrentDescription) or
-                nameof(WeatherWidgetViewModel.PrecipitationText),
-            WidgetKind.Music => propertyName is
-                nameof(MusicWidgetViewModel.Title) or
-                nameof(MusicWidgetViewModel.Artist) or
-                nameof(MusicWidgetViewModel.StatusText) or
-                nameof(MusicWidgetViewModel.ThumbnailImage) or
-                nameof(MusicWidgetViewModel.HasSession) or
-                nameof(MusicWidgetViewModel.IsPlaying) or
-                nameof(MusicWidgetViewModel.CanGoPrevious) or
-                nameof(MusicWidgetViewModel.CanGoNext) or
-                nameof(MusicWidgetViewModel.PlaybackState) or
-                nameof(MusicWidgetViewModel.Duration) or
-                nameof(MusicWidgetViewModel.SeekMaximum) or
-                nameof(MusicWidgetViewModel.SeekValue),
-            WidgetKind.Glance => propertyName is
-                nameof(GlanceWidgetViewModel.TimeText) or
-                nameof(GlanceWidgetViewModel.DateText) or
-                nameof(GlanceWidgetViewModel.WeekdayText) or
-                nameof(GlanceWidgetViewModel.TraditionalCalendarTitle) or
-                nameof(GlanceWidgetViewModel.HasTraditionalCalendar) or
-                nameof(GlanceWidgetViewModel.CurrentImagePath) or
-                nameof(GlanceWidgetViewModel.BackgroundImageOpacity) or
-                nameof(GlanceWidgetViewModel.HasVisibleCurrentImage) or
-                nameof(GlanceWidgetViewModel.ReadabilityStrengthOpacity) or
-                nameof(GlanceWidgetViewModel.ReadabilityOpacity) or
-                nameof(GlanceWidgetViewModel.ShowTime) or
-                nameof(GlanceWidgetViewModel.ShowDate) or
-                nameof(GlanceWidgetViewModel.ShowWeekday),
-            _ => true
-        };
-    }
+        string? propertyName) => true;
 
     private void ApplyLocalizedTitleActionTooltips()
     {
@@ -1358,11 +853,6 @@ IsHideAnimationRunning = true;
                 _compactPresentationSource.PropertyChanged -= CompactPresentationSource_PropertyChanged;
                 _compactPresentationSource = null;
             }
-            if (_subscribedSearchHistoryService is { } historyService)
-            {
-                historyService.RecentQueriesChanged -= OnRecentQueriesChanged;
-                _subscribedSearchHistoryService = null;
-            }
             try { TrayAnimation.RevealWindowForTrayShow(); } catch { }
             try { CleanupBase(); } catch (Exception ex) { App.Log($"[ContentWidget] CleanupBase failed during close: {ex.Message}"); }
             try { _contentHost.DisposeContent(); } catch (Exception ex) { App.Log($"[ContentWidget] DisposeContent failed during close: {ex.Message}"); }
@@ -1407,12 +897,6 @@ IsHideAnimationRunning = true;
         ContentWidgetShell.ShowHoverButtons = SettingsService.Settings.ShowHoverButtons;
         _titleViewModel.RefreshMetrics();
         ApplyAppearancePreview();
-
-        // Search capsule subtitle depends on SearchSaveHistory / hide-sensitive flags.
-        if (CurrentContent is SearchWidgetContentAdapter)
-        {
-            RefreshCompactPresentation();
-        }
     }
 
     // ── Drag handlers (delegate to base) ───────────────────────
@@ -1445,37 +929,10 @@ IsHideAnimationRunning = true;
 
         public WidgetConfig Config { get; private set; }
 
-        public string DisplayName
-        {
-            get
-            {
-                if (Config.IsDefaultTitle)
-                {
-                    var localization = App.Current.LocalizationService;
-                    var key = Config.WidgetKind switch
-                    {
-                        WidgetKind.Todo => "Todo.Title",
-                        WidgetKind.Weather => "Weather.Title",
-                        WidgetKind.Tags => "Tags.Title",
-                        WidgetKind.Music => "Music.Title",
-                        WidgetKind.Glance => "Glance.Title",
-                        WidgetKind.Search => "Search.Title",
-                        WidgetKind.SystemMonitor => "SystemMonitor.Title",
-                        _ => ""
-                    };
-                    if (!string.IsNullOrEmpty(key))
-                    {
-                        var localized = localization.T(key);
-                        if (!string.IsNullOrEmpty(localized))
-                            return localized;
-                    }
-                }
-
-                return string.IsNullOrWhiteSpace(Config.Name)
-                    ? Config.WidgetKind.ToString()
-                    : Config.Name;
-            }
-        }
+        public string DisplayName =>
+            string.IsNullOrWhiteSpace(Config.Name)
+                ? Config.WidgetKind.ToString()
+                : Config.Name;
 
         public double TitleIconSize
         {

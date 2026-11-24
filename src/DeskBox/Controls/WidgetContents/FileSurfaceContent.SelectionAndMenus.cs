@@ -1690,14 +1690,6 @@ public sealed partial class FileSurfaceContent
             menu.Items.Add(restore);
         }
 
-        menu.Items.Add(new MenuFlyoutSeparator());
-        MenuFlyoutItem editRules = CreateMenuItem(
-            "Settings.FileStacks.Custom.Rules.Title",
-            "\uE713");
-        editRules.Click += (_, _) =>
-            App.Current.ShowSettings("FileStackSettings");
-        menu.Items.Add(editRules);
-
         return menu;
     }
 
@@ -1941,14 +1933,6 @@ public sealed partial class FileSurfaceContent
             CopyPathsToClipboard(stack.Members);
         };
         flyout.Items.Add(copyPaths);
-        flyout.Items.Add(new MenuFlyoutSeparator());
-
-        MenuFlyoutItem editRules = CreateMenuItem(
-            "Settings.FileStacks.Custom.Rules.Title",
-            "\uE713");
-        editRules.Click += (_, _) =>
-            App.Current.ShowSettings("FileStackSettings");
-        flyout.Items.Add(editRules);
         return flyout;
     }
 
@@ -2028,9 +2012,6 @@ public sealed partial class FileSurfaceContent
         string text = string.Join(Environment.NewLine, paths);
         var package = new DataPackage();
         package.SetText(text);
-        DeskBoxClipboardWriteScope.MarkWrite(
-            text: text,
-            paths: paths);
         Clipboard.SetContent(package);
         Clipboard.Flush();
         ShowFeedback(new WidgetFeedbackRequest(

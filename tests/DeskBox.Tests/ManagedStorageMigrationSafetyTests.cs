@@ -33,8 +33,7 @@ public sealed class ManagedStorageMigrationSafetyTests : IDisposable
             _settingsService,
             _fileService,
             TestOrganizerServices.Create(_settingsService, _fileService),
-            new ThemeService(_settingsService),
-            new QuickCaptureService(new QuickCaptureStore(Path.Combine(_tempRoot, "quick-capture"))),
+            new ThemeService(_settingsService))),
             () => Path.Combine(_tempRoot, "desktop"),
             recycleManagedFolderDeletes: false);
     }

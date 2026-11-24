@@ -8,8 +8,8 @@ namespace DeskBox;
 public partial class App
 {
     // Poll rather than wire every UI event: the snapshot is a handful of
-    // cheap Win32 queries and the quiet tiers are measured in seconds.
-    private static readonly TimeSpan QuiescenceWorkingSetTrimPollInterval = TimeSpan.FromSeconds(2);
+    // cheap Win32 queries and the quiet tiers are measured in tens of seconds.
+    private static readonly TimeSpan QuiescenceWorkingSetTrimPollInterval = TimeSpan.FromSeconds(10);
 
     private readonly QuiescenceWorkingSetTrimTracker _quiescenceWorkingSetTrimTracker = new();
     private DispatcherQueueTimer? _quiescenceWorkingSetTrimTimer;
@@ -24,6 +24,12 @@ public partial class App
 
     private void StartQuiescenceWorkingSetTrim()
     {
+        if (!IsQuiescenceWorkingSetTrimEnabled)
+        {
+            StopQuiescenceWorkingSetTrim();
+            return;
+        }
+
         if (_quiescenceWorkingSetTrimTimer is null)
         {
             _quiescenceWorkingSetTrimTimer = UiDispatcherQueue.CreateTimer();
@@ -32,8 +38,6 @@ public partial class App
             _quiescenceWorkingSetTrimTimer.Tick += QuiescenceWorkingSetTrimTimer_Tick;
         }
 
-        // The toggle is read on every tick so a settings change takes effect
-        // without any timer re-arming; an idle tick is a few cheap queries.
         _quiescenceWorkingSetTrimTimer.Start();
     }
 

@@ -7,7 +7,6 @@
 use std::mem::size_of;
 
 mod explorer_shell_launch;
-mod music_volume;
 mod quick_access;
 mod recycle_bin;
 mod shortcut;
@@ -35,7 +34,6 @@ pub const DESKBOX_NATIVE_CAPABILITIES: u64 = DESKBOX_NATIVE_CAPABILITY_SHORTCUT_
     | DESKBOX_NATIVE_CAPABILITY_SHORTCUT_RESOLVE_NO_UI_V2
     | DESKBOX_NATIVE_CAPABILITY_SHORTCUT_WRITE_V2
     | DESKBOX_NATIVE_CAPABILITY_SHORTCUT_RESOLVE_WITH_UI_V2
-    | DESKBOX_NATIVE_CAPABILITY_MUSIC_VOLUME_V1
     | DESKBOX_NATIVE_CAPABILITY_EXPLORER_SHELL_LAUNCH_V1
     | DESKBOX_NATIVE_CAPABILITY_QUICK_ACCESS_V1
     | DESKBOX_NATIVE_CAPABILITY_RECYCLE_BIN_V1;
@@ -1302,8 +1300,8 @@ pub unsafe extern "C" fn deskbox_music_volume_v1(
     let request_ref = unsafe { &*request };
     // SAFETY: The result envelope was validated and initialized above.
     let result_ref = unsafe { &mut *result };
-    // SAFETY: Input pointer lifetimes are guaranteed by the ABI caller.
-    unsafe { music_volume::execute(request_ref, result_ref) }
+    let _ = (request_ref, result_ref);
+    DESKBOX_NATIVE_STATUS_INVALID_ARGUMENT
 }
 
 /// Launches a file or URI through the Shell object hosted by the running

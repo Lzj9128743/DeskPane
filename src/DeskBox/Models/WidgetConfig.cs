@@ -168,6 +168,21 @@ public class WidgetConfig
     /// <summary>Stable subfolder name used when the widget follows the default managed storage path.</summary>
     public string? ManagedFolderName { get; set; }
 
+    /// <summary>
+    /// When true, this widget is a virtual logical group over the Windows desktop
+    /// (personal + public desktop). Files remain in place on the desktop — no
+    /// managed folders are created and no desktop files are moved.
+    /// </summary>
+    public bool IsVirtualDesktopGroup { get; set; }
+
+    /// <summary>
+    /// Optional auto-classification category id (from <see cref="DesktopOrganizationCategoryIds"/>,
+    /// e.g. "shortcuts", "documents", "images", "media", "packages", "folders", "other")
+    /// used to automatically route newly added desktop items into this virtual group.
+    /// </summary>
+    [JsonIgnore(Condition = JsonIgnoreCondition.WhenWritingNull)]
+    public string? VirtualDesktopCategoryId { get; set; }
+
     /// <summary>How items are sorted in this widget.</summary>
     public WidgetSortMode SortMode { get; set; } = WidgetSortMode.Name;
 
@@ -263,32 +278,8 @@ public enum WidgetKind
     /// <summary>File-oriented widget used for references or folder-backed storage.</summary>
     File,
 
-    /// <summary>Built-in lightweight text/link capture widget.</summary>
-    QuickCapture,
-
-    /// <summary>Reserved for a future weather widget.</summary>
-    Weather,
-
-    /// <summary>Reserved for a future todo widget.</summary>
-    Todo,
-
-    /// <summary>Reserved for a future tag widget.</summary>
-    Tags,
-
-    /// <summary>Reserved for a future music control widget.</summary>
-    Music,
-
-    /// <summary>Reserved for a future system monitor widget.</summary>
-    SystemMonitor,
-
-    /// <summary>Global search widget that provides unified file and content search.</summary>
-    Search,
-
-    /// <summary>Legacy value kept only for migrating old settings files.</summary>
-    Productivity,
-
-    /// <summary>At-a-glance background, time and date widget.</summary>
-    Glance
+    /// <summary>Retired legacy widget kinds ignored during deserialization.</summary>
+    Unsupported
 }
 
 /// <summary>
@@ -349,19 +340,19 @@ public sealed class WidgetKindJsonConverter : JsonConverter<WidgetKind>
         if (reader.TokenType == JsonTokenType.String)
         {
             string? value = reader.GetString();
-            return Enum.TryParse(value, ignoreCase: true, out WidgetKind parsed) &&
-                   Enum.IsDefined(parsed)
-                ? parsed
-                : WidgetKind.File;
+            return string.Equals(value, nameof(WidgetKind.File), StringComparison.OrdinalIgnoreCase)
+                ? WidgetKind.File
+                : WidgetKind.Unsupported;
         }
 
         if (reader.TokenType == JsonTokenType.Number && reader.TryGetInt32(out int numericValue))
         {
-            var parsed = (WidgetKind)numericValue;
-            return Enum.IsDefined(parsed) ? parsed : WidgetKind.File;
+            return numericValue == (int)WidgetKind.File
+                ? WidgetKind.File
+                : WidgetKind.Unsupported;
         }
 
-        return WidgetKind.File;
+        return WidgetKind.Unsupported;
     }
 
     public override void Write(Utf8JsonWriter writer, WidgetKind value, JsonSerializerOptions options)

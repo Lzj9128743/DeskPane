@@ -104,6 +104,63 @@ public partial class WidgetViewModel
         }
 
         string destinationFolderPath = CurrentFolderPath!;
+        if (Config.IsVirtualDesktopGroup &&
+            string.Equals(destinationFolderPath, MappedFolderPath, StringComparison.OrdinalIgnoreCase))
+        {
+            var desktopPaths = displayablePaths
+                .Where(VirtualDesktopGroupPolicy.IsDesktopItemPath)
+                .ToList();
+            var externalPaths = displayablePaths
+                .Where(p => !VirtualDesktopGroupPolicy.IsDesktopItemPath(p))
+                .ToList();
+
+            var assignedPaths = new List<string>(desktopPaths);
+
+            if (externalPaths.Count > 0)
+            {
+                bool shouldMoveExternal = moveWhenMapped ?? ShouldMoveManagedItems(
+                    externalPaths,
+                    destinationFolderPath);
+                OrganizerOperationResult externalOp = await _organizerService.OrganizeDropAsync(
+                    Config,
+                    Name,
+                    externalPaths,
+                    shouldMoveExternal,
+                    useShellProgress,
+                    ownerWindowHandle,
+                    progress,
+                    cancellationToken,
+                    destinationFolderPath);
+                assignedPaths.AddRange(externalOp.CompletedItems.Select(i => i.DestinationPath));
+            }
+
+            if (assignedPaths.Count > 0)
+            {
+                IReadOnlyList<string> affectedWidgetIds = VirtualDesktopGroupPolicy.AssignPathsToVirtualGroup(
+                    Config,
+                    _settingsService.Settings.Widgets,
+                    assignedPaths);
+                await _settingsService.SaveAsync();
+                await ReloadFolderContentsAsync(destinationFolderPath, cancellationToken: cancellationToken);
+
+                if (App.Current?.WidgetManager is { } manager)
+                {
+                    foreach (string affectedId in affectedWidgetIds)
+                    {
+                        if (!string.Equals(affectedId, Config.Id, StringComparison.Ordinal))
+                        {
+                            await manager.RefreshFileWidgetAsync(affectedId);
+                        }
+                    }
+                }
+            }
+
+            return assignedPaths
+                .Select(Path.GetFullPath)
+                .Distinct(StringComparer.OrdinalIgnoreCase)
+                .ToArray();
+        }
+
         bool shouldMove = moveWhenMapped ?? ShouldMoveManagedItems(
             displayablePaths,
             destinationFolderPath);

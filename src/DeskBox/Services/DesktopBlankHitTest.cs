@@ -67,7 +67,8 @@ internal static partial class DesktopBlankHitTest
 
         return listView != IntPtr.Zero &&
                IsShellDesktopListView(listView) &&
-               IsBlankListViewPoint(listView, screenPoint);
+               (!Win32Helper.IsWindowVisible(listView) ||
+                IsBlankListViewPoint(listView, screenPoint));
     }
 
     /// <summary>

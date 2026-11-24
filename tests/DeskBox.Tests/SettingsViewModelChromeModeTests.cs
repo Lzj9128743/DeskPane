@@ -13,10 +13,10 @@ public sealed class SettingsViewModelChromeModeTests
         var settingsService = scope.CreateSettingsService();
         settingsService.Settings.Widgets =
         [
-            CreateWidget(WidgetKind.Music, WidgetChromeMode.Standard),
-            CreateWidget(WidgetKind.Weather, WidgetChromeMode.Standard),
+            CreateWidget(WidgetKind.File, WidgetChromeMode.Standard),
+            CreateWidget(WidgetKind.File, WidgetChromeMode.Standard),
             CreateWidget(WidgetKind.File, WidgetChromeMode.Hidden),
-            CreateWidget(WidgetKind.Todo, WidgetChromeMode.Hidden)
+            CreateWidget(WidgetKind.File, WidgetChromeMode.Hidden)
         ];
 
         var changed = SettingsViewModel.ResetWidgetChromeOverrides(
@@ -40,9 +40,9 @@ public sealed class SettingsViewModelChromeModeTests
         settingsService.Settings.Widgets =
         [
             CreateWidget(WidgetKind.File, WidgetChromeMode.Hidden),
-            CreateWidget(WidgetKind.QuickCapture, WidgetChromeMode.Hidden),
-            CreateWidget(WidgetKind.Todo, WidgetChromeMode.Hidden),
-            CreateWidget(WidgetKind.Music, WidgetChromeMode.Standard)
+            CreateWidget(WidgetKind.File, WidgetChromeMode.Hidden),
+            CreateWidget(WidgetKind.File, WidgetChromeMode.Hidden),
+            CreateWidget(WidgetKind.File, WidgetChromeMode.Standard)
         ];
 
         var changed = SettingsViewModel.ResetWidgetChromeOverrides(
@@ -63,7 +63,7 @@ public sealed class SettingsViewModelChromeModeTests
     {
         using var scope = new TempSettingsScope();
         var settingsService = scope.CreateSettingsService();
-        WidgetConfig weather = CreateWidget(WidgetKind.Weather, WidgetChromeMode.Overlay);
+        WidgetConfig weather = CreateWidget(WidgetKind.File, WidgetChromeMode.Overlay);
         WidgetConfig file = CreateWidget(WidgetKind.File, WidgetChromeMode.Hidden);
         settingsService.Settings.Widgets = [weather, file];
         settingsService.Settings.WidgetGroups =

@@ -7,18 +7,11 @@ namespace DeskBox.Tests;
 public sealed class WidgetCompactPerformancePolicyTests
 {
     [Fact]
-    public void WarmupSchedule_PrioritizesColdBuiltInSurfaces()
+    public void WarmupSchedule_ReturnsBoundedDelayForFileWidget()
     {
-        int quickCapture = WidgetCompactWarmupSchedulePolicy
-            .GetInitialDelayMilliseconds(WidgetKind.QuickCapture);
-        int weather = WidgetCompactWarmupSchedulePolicy
-            .GetInitialDelayMilliseconds(WidgetKind.Weather);
         int file = WidgetCompactWarmupSchedulePolicy
             .GetInitialDelayMilliseconds(WidgetKind.File);
 
-        Assert.True(quickCapture < weather);
-        Assert.True(weather < file);
-        Assert.InRange(quickCapture, 150, 300);
         Assert.InRange(file, 350, 600);
     }
 

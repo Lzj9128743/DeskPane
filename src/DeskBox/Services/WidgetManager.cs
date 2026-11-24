@@ -37,11 +37,6 @@ public sealed record FileWidgetPathConflict(
     FileWidgetPathConflictKind Kind,
     WidgetConfig? ConflictingWidget);
 
-public sealed record QuickCaptureFileWidgetTarget(
-    string WidgetId,
-    string Name,
-    string FolderPath);
-
 public enum WidgetRemovalAction
 {
     RemoveWidgetOnly,
@@ -53,12 +48,6 @@ public sealed record ManagedStorageFolderCleanupCandidate(
     string Name,
     string Path,
     int ItemCount);
-
-internal sealed record FeatureWidgetHandler(
-    WidgetKind WidgetKind,
-    Func<bool, Task<IDesktopWidgetWindow?>> CreateOrShowAsync,
-    Func<bool, bool, Task> SetEnabledAsync,
-    Action HideLoaded);
 
 internal sealed record WidgetWindowCreationRequest(
     WidgetConfig Config,
@@ -135,9 +124,6 @@ internal interface IDesktopWidgetWindow
 /// </summary>
 public sealed partial class WidgetManager
 {
-    private readonly TodoSettingsCoordinator? _todoSettings;
-    private readonly IQuickCaptureSettings? _quickCaptureSettings;
-    private readonly ISearchFeatureSettings? _searchFeatureSettings;
     private const string ManagedShortcutDescriptionPrefix = "DeskBox mapped widget shortcut:";
 
     /// <summary>
@@ -150,7 +136,6 @@ public sealed partial class WidgetManager
     private readonly FileService _fileService;
     private readonly OrganizerService _organizerService;
     private readonly ThemeService _themeService;
-    private readonly QuickCaptureService _quickCaptureService;
     private readonly LocalizationService _localizationService;
     private readonly Func<string> _desktopPathProvider;
     private readonly bool _recycleManagedFolderDeletes;
@@ -491,23 +476,15 @@ public sealed partial class WidgetManager
         FileService fileService,
         OrganizerService organizerService,
         ThemeService themeService,
-        QuickCaptureService quickCaptureService,
-        LocalizationService? localizationService = null,
-        TodoSettingsCoordinator? todoSettings = null,
-        IQuickCaptureSettings? quickCaptureSettings = null,
-        ISearchFeatureSettings? searchFeatureSettings = null)
+        LocalizationService? localizationService = null)
         : this(
             settingsService,
             fileService,
             organizerService,
             themeService,
-            quickCaptureService,
             localizationService ?? new LocalizationService(settingsService),
             () => Environment.GetFolderPath(Environment.SpecialFolder.DesktopDirectory),
-            recycleManagedFolderDeletes: true,
-            todoSettings,
-            quickCaptureSettings,
-            searchFeatureSettings)
+            recycleManagedFolderDeletes: true)
     {
     }
 
@@ -516,7 +493,6 @@ public sealed partial class WidgetManager
         FileService fileService,
         OrganizerService organizerService,
         ThemeService themeService,
-        QuickCaptureService quickCaptureService,
         Func<string> desktopPathProvider,
         bool recycleManagedFolderDeletes)
         : this(
@@ -524,7 +500,6 @@ public sealed partial class WidgetManager
             fileService,
             organizerService,
             themeService,
-            quickCaptureService,
             null,
             desktopPathProvider,
             recycleManagedFolderDeletes)
@@ -536,26 +511,18 @@ public sealed partial class WidgetManager
         FileService fileService,
         OrganizerService organizerService,
         ThemeService themeService,
-        QuickCaptureService quickCaptureService,
         LocalizationService? localizationService,
         Func<string> desktopPathProvider,
-        bool recycleManagedFolderDeletes,
-        TodoSettingsCoordinator? todoSettings = null,
-        IQuickCaptureSettings? quickCaptureSettings = null,
-        ISearchFeatureSettings? searchFeatureSettings = null)
+        bool recycleManagedFolderDeletes)
     {
         _settingsService = settingsService;
         _fileSessionRegistration = new(_fileWidgets,
             session => session.Host, session => session.Content);
         _contentWindowRegistration = new(_contentWidgets, _widgetWindowHandles,
             window => window.WindowHandle);
-        _todoSettings = todoSettings;
-        _quickCaptureSettings = quickCaptureSettings;
-        _searchFeatureSettings = searchFeatureSettings;
         _fileService = fileService;
         _organizerService = organizerService;
         _themeService = themeService;
-        _quickCaptureService = quickCaptureService;
         _localizationService = localizationService ?? new LocalizationService(settingsService);
         _desktopPathProvider = desktopPathProvider;
         _recycleManagedFolderDeletes = recycleManagedFolderDeletes;
@@ -565,12 +532,6 @@ public sealed partial class WidgetManager
         _fileWidgetHostDiagnostics = new FileWidgetHostDiagnostics();
         _trayToggleRequestQueue = new(ExecuteQueuedTrayToggleAsync);
         InitializeCapsuleArrangementState();
-        _featureWidgetHandlers = CreateFeatureWidgetHandlers();
-        _windowProviders = CreateWindowProviders();
-        foreach (var kind in FeatureWidgetSettings.FeatureKinds)
-        {
-            _lastFeatureWidgetEnabledStates[kind] = FeatureWidgetSettings.IsEnabled(_settingsService.Settings, kind);
-        }
         _lastWidgetLayerMode = SettingsService.NormalizeWidgetLayerModeSetting(_settingsService.Settings.WidgetLayerMode);
         _lastPerformanceSettings =
             PerformanceSettingsPolicy.Resolve(_settingsService.Settings);
@@ -586,99 +547,12 @@ public sealed partial class WidgetManager
             $"fallbackReason={_fileWidgetHostDiagnostics.LastFallbackReason ?? "none"}");
     }
 
-    private Dictionary<WidgetKind, FeatureWidgetHandler> CreateFeatureWidgetHandlers()
-    {
-        FeatureWidgetHandler[] handlers =
-        [
-            new(
-                WidgetKind.QuickCapture,
-                async reveal => await CreateOrShowQuickCaptureWidgetAsync(reveal),
-                SetQuickCaptureEnabledAsync,
-                CloseLoadedQuickCaptureWidgets),
-            new(
-                WidgetKind.Todo,
-                async _ => await CreateTodoWidgetAsync(),
-                SetTodoEnabledAsync,
-                () => HideAndCloseFeatureWidgetAsync(WidgetKind.Todo)),
-            new(
-                WidgetKind.Music,
-                async _ => await CreateSingletonContentFeatureWidgetAsync(WidgetKind.Music),
-                SetContentFeatureWidgetEnabledAsync,
-                () => HideAndCloseFeatureWidgetAsync(WidgetKind.Music)),
-            new(
-                WidgetKind.Weather,
-                async _ => await CreateSingletonContentFeatureWidgetAsync(WidgetKind.Weather),
-                SetWeatherFeatureWidgetEnabledAsync,
-                () => HideAndCloseFeatureWidgetAsync(WidgetKind.Weather)),
-            new(
-                WidgetKind.Search,
-                async _ => await CreateSingletonContentFeatureWidgetAsync(WidgetKind.Search),
-                SetSearchFeatureWidgetEnabledAsync,
-                () => HideAndCloseFeatureWidgetAsync(WidgetKind.Search)),
-            new(
-                WidgetKind.Glance,
-                CreateOrShowGlanceWidgetsAsync,
-                SetGlanceFeatureWidgetEnabledAsync,
-                () => CloseLoadedFeatureWidgetWindows(WidgetKind.Glance))
-        ];
-
-        return handlers.ToDictionary(handler => handler.WidgetKind);
-    }
-
     private Dictionary<WidgetKind, WidgetWindowProvider> CreateWindowProviders()
     {
         WidgetWindowProvider[] providers =
         [
             new(
                 WidgetKind.File,
-                async request => await CreateContentWidgetFromConfigAsync(
-                    request.Config,
-                    request.KeepPreparedForAnimation,
-                    request.RevealAfterCreate,
-                    request.ShowRaisedWhileInitializing,
-                    request.CancellationToken)),
-            new(
-                WidgetKind.QuickCapture,
-                async request => await CreateContentWidgetFromConfigAsync(
-                    request.Config,
-                    request.KeepPreparedForAnimation,
-                    request.RevealAfterCreate,
-                    request.ShowRaisedWhileInitializing,
-                    request.CancellationToken)),
-            new(
-                WidgetKind.Todo,
-                async request => await CreateContentWidgetFromConfigAsync(
-                    request.Config,
-                    request.KeepPreparedForAnimation,
-                    request.RevealAfterCreate,
-                    request.ShowRaisedWhileInitializing,
-                    request.CancellationToken)),
-            new(
-                WidgetKind.Music,
-                async request => await CreateContentWidgetFromConfigAsync(
-                    request.Config,
-                    request.KeepPreparedForAnimation,
-                    request.RevealAfterCreate,
-                    request.ShowRaisedWhileInitializing,
-                    request.CancellationToken)),
-            new(
-                WidgetKind.Weather,
-                async request => await CreateContentWidgetFromConfigAsync(
-                    request.Config,
-                    request.KeepPreparedForAnimation,
-                    request.RevealAfterCreate,
-                    request.ShowRaisedWhileInitializing,
-                    request.CancellationToken)),
-            new(
-                WidgetKind.Search,
-                async request => await CreateContentWidgetFromConfigAsync(
-                    request.Config,
-                    request.KeepPreparedForAnimation,
-                    request.RevealAfterCreate,
-                    request.ShowRaisedWhileInitializing,
-                    request.CancellationToken)),
-            new(
-                WidgetKind.Glance,
                 async request => await CreateContentWidgetFromConfigAsync(
                     request.Config,
                     request.KeepPreparedForAnimation,
@@ -702,23 +576,6 @@ public sealed partial class WidgetManager
 
         ApplyWidgetLayerModeIfChanged();
         ApplyCapsuleArrangementIfChanged();
-
-        foreach (var kind in FeatureWidgetSettings.FeatureKinds)
-        {
-            bool enabled = FeatureWidgetSettings.IsEnabled(_settingsService.Settings, kind);
-            if (_lastFeatureWidgetEnabledStates.TryGetValue(kind, out bool lastEnabled) &&
-                lastEnabled == enabled)
-            {
-                continue;
-            }
-
-            _lastFeatureWidgetEnabledStates[kind] = enabled;
-            if (kind == WidgetKind.QuickCapture && _quickCaptureSettings is not null)
-                continue; // the coordinator handles external enablement and listener state
-            if (kind == WidgetKind.Search && _searchFeatureSettings is not null)
-                continue; // the coordinator orders widget teardown before runtime release
-            ApplyFeatureWidgetEnabledState(kind, enabled);
-        }
 
         RefreshWidgetGroupPresentationDefaultsIfChanged();
         ApplyPerformanceSettingsIfChanged();
@@ -832,6 +689,8 @@ public sealed partial class WidgetManager
         QueueIdleWidgetZOrderNormalization(reason);
     }
 
+    private bool _isApplyingAppearancePreview;
+
     private void ApplyAppearancePreview()
     {
         if (_isApplyingAppearancePreview)
@@ -859,11 +718,6 @@ public sealed partial class WidgetManager
     public async Task RestoreWidgetsAsync()
     {
         await RecoverManagedStorageCommitAsync();
-        RepairLegacyContentFeatureFileShells();
-
-        // Dedup singleton feature widgets. Glance intentionally supports
-        // multiple independently configured instances.
-        DeduplicateFeatureWidgets();
         NormalizeWidgetGroupsForRuntime();
         // Deep review R17 (G3 audit): topology dictionary mutations run under
         // the graph gate — the settings-host snapshot apply swaps the whole
@@ -1016,20 +870,20 @@ public sealed partial class WidgetManager
 
     private async Task CreateManagedWidgetCoreAsync(string? name, bool placeForFirstRun)
     {
+        _ = placeForFirstRun;
         name = string.IsNullOrWhiteSpace(name)
             ? _localizationService.T("Widget.DefaultName")
             : name;
-        string managedFolderName = CreateManagedFolderName(name);
-        string folderPath = BuildManagedFolderPath(managedFolderName);
-        Directory.CreateDirectory(folderPath);
+        string userDesktop = FileService.GetDesktopPaths().UserDesktop;
 
         var config = new WidgetConfig
         {
             Name = name,
             WidgetKind = WidgetKind.File,
-            MappedFolderPath = folderPath,
-            FollowsDefaultStoragePath = true,
-            ManagedFolderName = managedFolderName,
+            IsVirtualDesktopGroup = true,
+            MappedFolderPath = userDesktop,
+            FollowsDefaultStoragePath = false,
+            ManagedFolderName = null,
             BoundsCoordinateVersion = WidgetConfig.CurrentBoundsCoordinateVersion,
             Width = _settingsService.Settings.DefaultWidgetWidth,
             Height = _settingsService.Settings.DefaultWidgetHeight
@@ -1054,46 +908,12 @@ public sealed partial class WidgetManager
 
     public async Task CreateWidgetOfKindAsync(WidgetKind widgetKind)
     {
-        if (!_widgetRegistry.CanCreateWindow(widgetKind))
+        if (!_widgetRegistry.CanCreateWindow(widgetKind) || widgetKind != WidgetKind.File)
         {
             throw new NotSupportedException($"Widget kind '{widgetKind}' is not registered as creatable.");
         }
 
-        switch (widgetKind)
-        {
-            case WidgetKind.File:
-                await CreateManagedWidgetAsync(_localizationService.T("Widget.DefaultNameShort"));
-                break;
-            case WidgetKind.Todo:
-                await CreateTodoWidgetAsync();
-                break;
-            case WidgetKind.Music:
-                await CreateSingletonContentFeatureWidgetAsync(widgetKind);
-                break;
-            case WidgetKind.Glance:
-                await CreateGlanceWidgetAsync();
-                break;
-            default:
-                if (IsContentFeatureWidgetKind(widgetKind))
-                {
-                    await CreateSingletonContentFeatureWidgetAsync(widgetKind);
-                    break;
-                }
-
-                var config = new WidgetConfig
-                {
-                    Name = GetDefaultFeatureWidgetTitle(
-                        widgetKind,
-                        new WidgetContentFactory(_localizationService).GetDescriptor(widgetKind)),
-                    WidgetKind = widgetKind,
-                    BoundsCoordinateVersion = WidgetConfig.CurrentBoundsCoordinateVersion,
-                    Width = _settingsService.Settings.DefaultWidgetWidth,
-                    Height = _settingsService.Settings.DefaultWidgetHeight
-                };
-                ApplyNewWidgetPlacement(config);
-                await CreateRegisteredWidgetFromConfigAsync(config, revealAfterCreate: true);
-                break;
-        }
+        await CreateManagedWidgetAsync(_localizationService.T("Widget.DefaultNameShort"));
     }
 
     /// <summary>
@@ -1336,32 +1156,6 @@ public sealed partial class WidgetManager
             }
 
             ApplyGroupLayoutToMember(group, config);
-        }
-
-        if (config.WidgetKind == WidgetKind.QuickCapture)
-        {
-            ContentWidgetWindow quickCaptureWindow;
-            if (_contentWidgets.TryGetValue(widgetId, out var existingQuickCapture))
-            {
-                quickCaptureWindow = existingQuickCapture;
-            }
-            else
-            {
-                quickCaptureWindow = await CreateContentWidgetFromConfigAsync(
-                    config,
-                    keepPreparedForAnimation: !reveal);
-            }
-
-            ShowLoadedWidgetWindow(
-                quickCaptureWindow,
-                reveal,
-                autoRestoreOnReveal);
-            return true;
-        }
-
-        if (IsContentFeatureWidgetKind(config.WidgetKind))
-        {
-            return await ShowContentWidgetAsync(config, reveal);
         }
 
         if (config.WidgetKind != WidgetKind.File)
@@ -2077,41 +1871,9 @@ public sealed partial class WidgetManager
         _settingsService.RemoveWidgetImmediate(widgetId);
         _topologyLayoutService.RemoveSurface(_settingsService.Settings, widgetId);
         ClearWidgetGroupTransientState(widgetId);
-        if (config is not null && FeatureWidgetSettings.IsFeatureWidget(config.WidgetKind))
-        {
-            if (config.WidgetKind == WidgetKind.Glance)
-            {
-                await GlanceWidgetStore.DeleteForWidgetAsync(config.Id);
-                bool hasRemainingGlanceWidget = _settingsService.Settings.Widgets.Any(widget =>
-                    widget.WidgetKind == WidgetKind.Glance &&
-                    !IsDeleted(widget.Id));
-                if (!hasRemainingGlanceWidget)
-                {
-                    SetFeatureWidgetEnabledState(WidgetKind.Glance, false);
-                }
-            }
-            else if (config.WidgetKind == WidgetKind.Todo)
-            {
-                // Todo widgets can coexist; deleting one removes its store and
-                // attachments, and only disables the feature when the last
-                // instance goes away (mirroring the Glance branch above).
-                await TodoWidgetStore.DeleteForWidgetAsync(config.Id);
-                bool hasRemainingTodoWidget = _settingsService.Settings.Widgets.Any(widget =>
-                    widget.WidgetKind == WidgetKind.Todo &&
-                    !IsDeleted(widget.Id));
-                if (!hasRemainingTodoWidget)
-                {
-                    SetFeatureWidgetEnabledState(WidgetKind.Todo, false);
-                }
-            }
-            else
-            {
-                await CommitFeatureWidgetStateAsync(config.WidgetKind, false);
-            }
-        }
         await _settingsService.SaveAsync();
         _deletedWidgetIds.Remove(widgetId);
-        App.Log($"[WidgetManager] Widget delete persisted: {widgetId} kind={config?.WidgetKind} featureEnabled={GetFeatureWidgetEnabledState(config?.WidgetKind)}");
+        App.Log($"[WidgetManager] Widget delete persisted: {widgetId} kind={config?.WidgetKind}");
         WidgetRemoved?.Invoke(widgetId);
     }
 
@@ -2729,27 +2491,6 @@ public sealed partial class WidgetManager
                _settingsService.Settings.DeletedWidgetIds.Contains(widgetId);
     }
 
-    private (double Width, double Height) GetDefaultFeatureWidgetSize(WidgetKind kind)
-    {
-        return kind switch
-        {
-            WidgetKind.Todo => (
-                Math.Max(_settingsService.Settings.DefaultWidgetWidth, 320),
-                Math.Max(_settingsService.Settings.DefaultWidgetHeight, 420)),
-            WidgetKind.Music => (380, 190),
-            WidgetKind.Weather => (200, 200),
-            WidgetKind.Glance => (360, 260),
-            _ => (
-                _settingsService.Settings.DefaultWidgetWidth,
-                _settingsService.Settings.DefaultWidgetHeight)
-        };
-    }
-
-    private Task SetContentFeatureWidgetEnabledAsync(bool enabled, bool reveal)
-    {
-        return SetContentFeatureWidgetEnabledAsync(WidgetKind.Music, enabled, reveal);
-    }
-
     private Task<IDesktopWidgetWindow> CreateWidgetFromConfigAsync(
         WidgetConfig config,
         bool keepPreparedForAnimation = false,
@@ -2779,29 +2520,14 @@ public sealed partial class WidgetManager
         bool showRaisedWhileInitializing = false,
         CancellationToken cancellationToken = default)
     {
-        WidgetGroupConfig? group = WidgetGroupSettings.FindByMember(
-            _settingsService.Settings,
-            config.Id);
-        if (group is not null &&
-            config.WidgetKind is WidgetKind.File or
-                WidgetKind.QuickCapture)
-        {
-            return await CreateContentWidgetFromConfigAsync(
-                config, keepPreparedForAnimation, revealAfterCreate,
-                showRaisedWhileInitializing, cancellationToken);
-        }
-
-        if (!_windowProviders.TryGetValue(config.WidgetKind, out var provider))
+        if (config.WidgetKind != WidgetKind.File)
         {
             throw new NotSupportedException($"Widget kind '{config.WidgetKind}' is not registered as creatable.");
         }
 
-        return await provider.CreateWindowAsync(new WidgetWindowCreationRequest(
-            config,
-            keepPreparedForAnimation,
-            revealAfterCreate,
-            showRaisedWhileInitializing,
-            cancellationToken));
+        return await CreateContentWidgetFromConfigAsync(
+            config, keepPreparedForAnimation, revealAfterCreate,
+            showRaisedWhileInitializing, cancellationToken);
     }
 
     private async Task<ContentWidgetWindow> CreateContentWidgetFromConfigAsync(

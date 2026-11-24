@@ -188,8 +188,7 @@ internal sealed class Migration_0_To_1 : ISettingsMigration
             settings.WidgetCollapseBehavior = SettingsService.WidgetCollapseBehaviorClick;
         }
 
-        // Ensure FeatureWidgetEnabledStates dictionary is initialized
-        settings.FeatureWidgetEnabledStates ??= [];
+        // Legacy feature widget state retired.
 
         // Ensure Widgets list is initialized
         settings.Widgets ??= [];
@@ -289,10 +288,6 @@ internal sealed class Migration_4_To_5 : ISettingsMigration
 
     public void Migrate(AppSettings settings)
     {
-        if (settings.SearchMaxResults == 50)
-        {
-            settings.SearchMaxResults = 200;
-        }
     }
 }
 
@@ -312,8 +307,7 @@ internal sealed class Migration_5_To_6 : ISettingsMigration
 }
 
 /// <summary>
-/// Retires DeskBox's local filename index. Existing users must explicitly opt in
-/// before DeskBox sends queries to an installed Everything process.
+/// Retires DeskBox's local filename index.
 /// </summary>
 internal sealed class Migration_6_To_7 : ISettingsMigration
 {
@@ -321,9 +315,6 @@ internal sealed class Migration_6_To_7 : ISettingsMigration
 
     public void Migrate(AppSettings settings)
     {
-        settings.SearchEverythingEnabled = false;
-        settings.SearchEverythingExecutablePath = string.Empty;
-        settings.SearchEverythingAdvancedSyntaxEnabled = false;
     }
 }
 
@@ -742,12 +733,7 @@ internal sealed class Migration_7_To_8 : ISettingsMigration
         bool legacyAnimationsEnabled =
             settings.EnableContinuousDecorativeAnimations;
         settings.EnableTextMarqueeAnimations = legacyAnimationsEnabled;
-        settings.EnableVinylRotationAnimations = legacyAnimationsEnabled;
         settings.EnableCompactAmbientAnimations = legacyAnimationsEnabled;
-
-        // Glance image rotation was independent of the retired switch. Preserve
-        // the existing user-visible behavior during upgrade.
-        settings.EnableGlanceImageAutoRotation = true;
 
         bool retiredBestVisual = string.Equals(
                 settings.PerformanceMode,

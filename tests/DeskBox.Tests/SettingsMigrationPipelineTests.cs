@@ -132,27 +132,6 @@ public sealed class SettingsMigrationPipelineTests
         Assert.Equal(520, widget.Height);
     }
 
-    [Fact]
-    public void VersionSeven_RequiresFreshEverythingConsent()
-    {
-        var settings = new AppSettings
-        {
-            SchemaVersion = 6,
-            SearchEverythingEnabled = true,
-            SearchEverythingExecutablePath = @"C:\Portable\Everything.exe",
-            SearchEverythingAdvancedSyntaxEnabled = true
-        };
-
-        var (migratedSettings, migrationsApplied) = new SettingsMigrationPipeline().RunMigrationsOnCopy(settings);
-        Assert.True(migrationsApplied);
-        settings = migratedSettings;
-
-        Assert.Equal(SettingsMigrationPipeline.CurrentSchemaVersion, settings.SchemaVersion);
-        Assert.False(settings.SearchEverythingEnabled);
-        Assert.Equal(string.Empty, settings.SearchEverythingExecutablePath);
-        Assert.False(settings.SearchEverythingAdvancedSyntaxEnabled);
-    }
-
     [Theory]
     [InlineData(true)]
     [InlineData(false)]

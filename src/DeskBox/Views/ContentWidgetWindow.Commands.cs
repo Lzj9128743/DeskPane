@@ -128,15 +128,6 @@ public sealed partial class ContentWidgetWindow
         };
         flyout.Items.Add(mapFolderItem);
 
-        var addFeatureWidgetItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Common.AddFeatureWidget"),
-            Icon = new FontIcon { Glyph = "\uE710" }
-        };
-        addFeatureWidgetItem.Click += (_, _) =>
-            App.Current.ShowSettings("FeatureWidgets");
-        flyout.Items.Add(addFeatureWidgetItem);
-
         ShowFlyoutWithInteraction(
             flyout,
             ContentWidgetShell.AddActionButton);
@@ -157,41 +148,10 @@ public sealed partial class ContentWidgetWindow
         });
     }
 
-    internal Task RevealItemAsync(string? itemId)
-    {
-        return _contentHost.CurrentContent is QuickCaptureWidgetContentAdapter quickCapture
-            ? quickCapture.RevealItemAsync(itemId)
-            : Task.CompletedTask;
-    }
+    internal Task RevealItemAsync(string? itemId) => Task.CompletedTask;
 
     private void CloseButton_Click(object sender, RoutedEventArgs e)
     {
-        // A feature member inside a group is only the current Surface page.
-        // Closing hides the group and must not disable the global feature.
-        if (App.Current.WidgetManager?.GetWidgetGroupPresentation(_config.Id) is not null)
-        {
-            HideWindow();
-            return;
-        }
-
-        if (FeatureWidgetSettings.IsFeatureWidget(_config.WidgetKind) &&
-            App.Current.WidgetManager is { } widgetManager)
-        {
-            var localization = App.Current.LocalizationService;
-            var flyout = WidgetCompactConfirmationMenuBuilder.CreateDeleteConfirmation(
-                new WidgetCompactConfirmationOptions(
-                    localization.Format("Widget.FeatureWidget.DisableConfirmTitle", _config.Name),
-                    localization.T("Widget.FeatureWidget.Disable"),
-                    async () => await DisableCurrentFeatureWidgetAsync(widgetManager))
-                {
-                    Message = localization.T("Widget.FeatureWidget.DisableConfirmNote"),
-                    MessageGlyph = "\uE946",
-                    CancelText = localization.T("Common.Cancel")
-                });
-            ShowFlyoutWithInteraction(flyout, ContentWidgetShell.CloseActionButton);
-            return;
-        }
-
         HideWindow();
     }
 
@@ -277,14 +237,6 @@ public sealed partial class ContentWidgetWindow
     private MenuFlyout CreateMoreFlyout()
     {
         var flyout = new MenuFlyout();
-
-        if (CurrentContent is GlanceWidgetContentAdapter glance)
-        {
-            GlanceWidgetContextMenuBuilder.Append(
-                flyout,
-                glance.ViewModel,
-                App.Current.LocalizationService);
-        }
 
         var rename = new MenuFlyoutItem
         {
@@ -399,6 +351,10 @@ public sealed partial class ContentWidgetWindow
         };
         styleMenu.Items.Add(customizeBackground);
 
+        styleMenu.Items.Add(WidgetOpacityMenuBuilder.Create(
+            App.Current.LocalizationService,
+            SettingsService));
+
         styleMenu.Items.Add(WidgetBorderMenuBuilder.Create(
             App.Current.LocalizationService,
             _config,
@@ -453,6 +409,47 @@ public sealed partial class ContentWidgetWindow
 
         if (_config.WidgetKind is WidgetKind.File)
         {
+            if (CurrentContent is FileWidgetContentAdapter fileSurface)
+            {
+                bool isChinese = App.Current.LocalizationService.IsChinese;
+                bool isList = fileSurface.ViewModel.ViewMode == ViewMode.List;
+                var viewModeMenu = new MenuFlyoutSubItem
+                {
+                    Text = isChinese ? "视图模式" : "View Mode",
+                    Icon = new FontIcon { Glyph = isList ? "\uE8FD" : "\uF0E2" }
+                };
+
+                var iconViewItem = new MenuFlyoutItem
+                {
+                    Text = isChinese ? "图标视图" : "Icon View",
+                    Icon = new FontIcon { Glyph = !isList ? "\uE73E" : "\uF0E2" }
+                };
+                iconViewItem.Click += (_, _) =>
+                {
+                    if (fileSurface.ViewModel.ViewMode != ViewMode.Icon)
+                    {
+                        fileSurface.ViewModel.ToggleViewMode();
+                    }
+                };
+                viewModeMenu.Items.Add(iconViewItem);
+
+                var listViewItem = new MenuFlyoutItem
+                {
+                    Text = isChinese ? "列表视图" : "List View",
+                    Icon = new FontIcon { Glyph = isList ? "\uE73E" : "\uE8FD" }
+                };
+                listViewItem.Click += (_, _) =>
+                {
+                    if (fileSurface.ViewModel.ViewMode != ViewMode.List)
+                    {
+                        fileSurface.ViewModel.ToggleViewMode();
+                    }
+                };
+                viewModeMenu.Items.Add(listViewItem);
+
+                flyout.Items.Add(viewModeMenu);
+            }
+
             flyout.Items.Add(
                 FileWidgetFolderOpenBehaviorMenuBuilder.Create(
                     _config,
@@ -465,12 +462,6 @@ public sealed partial class ContentWidgetWindow
             _config,
             App.Current.WidgetManager,
             App.Current.LocalizationService);
-
-        flyout.Items.Add(WidgetSettingsMenuHelper.CreateMenuItem(
-            _config.WidgetKind,
-            App.Current.LocalizationService,
-            beforeClick: flyout.Hide,
-            widgetId: _config.Id));
 
         flyout.Items.Add(new MenuFlyoutSeparator());
         var disableWidget = new MenuFlyoutItem
@@ -538,15 +529,8 @@ public sealed partial class ContentWidgetWindow
         e.CloseWidgetItem = closeWidget;
     }
 
-    private string GetFeatureWidgetCloseMenuText()
-    {
-        LocalizationService localization = App.Current.LocalizationService;
-        return _config.WidgetKind == WidgetKind.Glance
-            ? localization.Format(
-                "Widget.FeatureWidget.DisableConfirmTitle",
-                _config.Name)
-            : localization.T("Widget.FeatureWidget.Disable");
-    }
+    private string GetFeatureWidgetCloseMenuText() =>
+        App.Current.LocalizationService.T("Widget.FeatureWidget.Disable");
 
     private Task ShowCloseWidgetFlyout(FrameworkElement target)
     {
@@ -556,19 +540,7 @@ public sealed partial class ContentWidgetWindow
             return Task.CompletedTask;
         }
 
-        return _config.WidgetKind == WidgetKind.File
-            ? ShowFileWidgetCloseFlowAsync(widgetManager, target)
-            : ShowFeatureWidgetCloseFlow(widgetManager, target);
-    }
-
-    private Task ShowFeatureWidgetCloseFlow(
-        WidgetManager widgetManager,
-        FrameworkElement target)
-    {
-        ShowFlyoutWithInteraction(
-            CreateFeatureWidgetCloseFlyout(widgetManager),
-            target);
-        return Task.CompletedTask;
+        return ShowFileWidgetCloseFlowAsync(widgetManager, target);
     }
 
     private async Task ShowFileWidgetCloseFlowAsync(
@@ -644,51 +616,6 @@ public sealed partial class ContentWidgetWindow
         }
 
         interactionHandoff?.Dispose();
-    }
-
-    private MenuFlyout CreateFeatureWidgetCloseFlyout(
-        WidgetManager widgetManager)
-    {
-        LocalizationService localization = App.Current.LocalizationService;
-        return WidgetCompactConfirmationMenuBuilder.CreateDeleteConfirmation(
-            new WidgetCompactConfirmationOptions(
-                localization.Format(
-                    "Widget.FeatureWidget.DisableConfirmTitle",
-                    _config.Name),
-                localization.T("Widget.FeatureWidget.Disable"),
-                async () =>
-                {
-                    if (_isCloseWidgetPending)
-                    {
-                        return;
-                    }
-
-                    _isCloseWidgetPending = true;
-                    try
-                    {
-                        await DisableCurrentFeatureWidgetAsync(widgetManager);
-                    }
-                    finally
-                    {
-                        _isCloseWidgetPending = false;
-                    }
-                })
-            {
-                Message = localization.T(
-                    "Widget.FeatureWidget.DisableConfirmNote"),
-                MessageGlyph = "\uE946",
-                CancelText = localization.T("Common.Cancel")
-            });
-    }
-
-    private Task DisableCurrentFeatureWidgetAsync(WidgetManager widgetManager)
-    {
-        return _config.WidgetKind == WidgetKind.Glance
-            ? widgetManager.SetGlanceWidgetInstanceEnabledAsync(_config.Id, enabled: false)
-            : widgetManager.SetFeatureWidgetEnabledAsync(
-                _config.WidgetKind,
-                enabled: false,
-                reveal: false);
     }
 
     private MenuFlyout CreateFileWidgetCloseFlyout(

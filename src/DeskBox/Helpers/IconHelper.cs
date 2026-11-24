@@ -13,12 +13,12 @@ namespace DeskBox.Helpers;
 /// </summary>
 public static class IconHelper
 {
-    private const int BaseMaxIconCacheEntries = 200;
-    private const long BaseMaxIconCacheBytes = 32L * 1024 * 1024;
-    private const int BaseMaxDecodedBitmapCacheEntries = 160;
-    private const long BaseMaxDecodedBitmapCacheBytes = 48L * 1024 * 1024;
-    private const int BaseMaxThumbnailCacheEntries = 128;
-    private const long BaseMaxThumbnailCacheBytes = 32L * 1024 * 1024;
+    private const int BaseMaxIconCacheEntries = 120;
+    private const long BaseMaxIconCacheBytes = 12L * 1024 * 1024;
+    private const int BaseMaxDecodedBitmapCacheEntries = 96;
+    private const long BaseMaxDecodedBitmapCacheBytes = 16L * 1024 * 1024;
+    private const int BaseMaxThumbnailCacheEntries = 64;
+    private const long BaseMaxThumbnailCacheBytes = 12L * 1024 * 1024;
     private const int SmallCacheBudgetPercent = 50;
     private const int BalancedCacheBudgetPercent = 100;
     private const int LargeCacheBudgetPercent = 150;
@@ -46,8 +46,8 @@ public static class IconHelper
     private static readonly TimeSpan IconBytesLoadTimeout =
         TimeSpan.FromMilliseconds(2500);
     private static readonly TimeSpan IdleCacheMinimumAge =
-        TimeSpan.FromMinutes(5);
-    private const int PreferredShellItemIconSize = 256;
+        TimeSpan.FromMinutes(2);
+    private const int PreferredShellItemIconSize = 128;
     // Frame sizes of the legacy Shell icons served for file types whose own icon
     // resource is gone. Requesting one of these returns a canvas the artwork
     // actually fills, unlike a Jumbo request that pads it.

@@ -317,11 +317,6 @@ public static partial class PerformanceLogger
                 CaptureCachePerformanceSnapshot();
 
             var app = App.Current;
-            string everythingState = app.EverythingSearchService?.CurrentSnapshot.State.ToString()
-                ?? "uninitialized";
-            bool searchEnabled = FeatureWidgetSettings.IsEnabled(
-                app.SettingsService.Settings,
-                DeskBox.Models.WidgetKind.Search);
             int loadedWidgetCount = app.WidgetManager?.LoadedWidgetCount ?? 0;
             int visibleWidgetCount = app.WidgetManager?.VisibleWidgetCount ?? 0;
             int surfaceSwitchGateCount =
@@ -385,8 +380,6 @@ public static partial class PerformanceLogger
                 $"iconCache={IconCacheCount} " +
                 $"shellKindCache={FileService.ShellKindCacheEntryCount} " +
                 $"shortcutMetadataCache={ShortcutHelper.StoredMetadataCacheEntryCount} " +
-                $"glanceStores={GlanceWidgetStore.CachedWidgetStoreCount} " +
-                $"weatherPathGates={WeatherCacheStore.PathGateCount} " +
                 $"decodedBitmapCache={DecodedBitmapCacheCount} " +
                 $"decodedBitmapMB={DecodedBitmapEstimatedBytes / (1024.0 * 1024):F1} " +
                 $"decodedBitmapLookupHits={cachePerformance.DecodedBitmapLookupHits} " +
@@ -396,15 +389,6 @@ public static partial class PerformanceLogger
                 $"decodedBitmapLoadFailures={cachePerformance.DecodedBitmapLoadFailures} " +
                 $"decodedBitmapLoadAvgMs={CalculateAverageDurationMilliseconds(cachePerformance.DecodedBitmapLoadDurationTicks, cachePerformance.DecodedBitmapLoads):F1} " +
                 $"decodedBitmapLoadMaxMs={TimeSpan.FromTicks(cachePerformance.DecodedBitmapMaxLoadDurationTicks).TotalMilliseconds:F1} " +
-                 $"quickCaptureDetailImageDecodes={QuickCaptureDetailImageDecodeCount} " +
-                 $"quickCaptureDetailImageMB={QuickCaptureDetailImageEstimatedBytes / (1024.0 * 1024):F1} " +
-                 $"glanceCompactBackgroundDecodes={GlanceCompactBackgroundDecodeCount} " +
-                 $"glanceCompactBackgroundMB={GlanceCompactBackgroundEstimatedBytes / (1024.0 * 1024):F1} " +
-                 $"musicCoverDecodes={MusicCoverDecodeCount} " +
-                 $"markdownRenders={MarkdownRenderCount} " +
-                 $"markdownImageDecodes={MarkdownInlineImageDecodeCount} " +
-                 $"musicTimers={ActiveMusicTimerCount} " +
-                 $"musicTimerIntervalMs={MusicProgressTimerIntervalMs} " +
                  $"transientUiTimers={ActiveTransientUiTimerCount} " +
                  $"transientUiTimersCreated={TransientUiTimerCreatedCount} " +
                  $"transientUiTimersReleased={TransientUiTimerReleasedCount} " +
@@ -415,13 +399,7 @@ public static partial class PerformanceLogger
                  $"activeFolderWatchers={activeFolderWatcherCount} " +
                  $"cachedGroupContents={cachedGroupContentCount} " +
                  $"materializedContentByKind={materializedContentByKind} " +
-                 $"cachedContentByKind={cachedContentByKind} " +
-                  $"searchEnabled={searchEnabled} " +
-                 $"everythingState={everythingState} " +
-                 $"everythingConnected={app.IsEverythingSearchConnected} " +
-                 $"searchPopupCreated={app.IsSearchPopupCreated} " +
-                $"searchPopupVisible={app.IsSearchPopupVisible} " +
-                $"searchMetaCache={app.SearchMetaCacheCount}" +
+                 $"cachedContentByKind={cachedContentByKind}" +
                 (string.IsNullOrWhiteSpace(reason) ? string.Empty : $" reason={reason}"));
         }
         catch

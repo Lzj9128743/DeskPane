@@ -339,24 +339,6 @@ public sealed class WidgetTopologyLayoutServiceTests
     }
 
     [Fact]
-    public void FixedContentWidget_GrowthIsCapped()
-    {
-        WidgetConfig weather = CreateRowWidget("weather", WidgetPositionAnchors.LeftTop, 24);
-        weather.WidgetKind = WidgetKind.Weather;
-        var settings = new AppSettings { Widgets = [weather] };
-        var service = new WidgetTopologyLayoutService();
-
-        service.Activate(settings, WidgetTopologyLayoutService.CreateSnapshotForTest(
-            Monitor("panel", @"\\.\DISPLAY1", true, 0, 0, 1920, 1040, 1)));
-        service.Activate(settings, WidgetTopologyLayoutService.CreateSnapshotForTest(
-            Monitor("panel", @"\\.\DISPLAY1", true, 0, 0, 3840, 2080, 1)));
-
-        Assert.Equal(900, weather.Width, 6);
-        Assert.Equal(750, weather.Height, 6);
-        Assert.Equal(24, weather.PositionMarginX, 6);
-    }
-
-    [Fact]
     public void CapsulePlacement_FollowsTheElasticMapWithoutChangingItsAnchor()
     {
         WidgetConfig widget = CreateRowWidget("capsule", WidgetPositionAnchors.LeftTop, 24);

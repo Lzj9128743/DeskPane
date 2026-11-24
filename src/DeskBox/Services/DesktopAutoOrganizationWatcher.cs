@@ -679,35 +679,68 @@ public sealed class DesktopAutoOrganizationWatcher : IDisposable
                     return;
                 }
 
-                OrganizerOperationResult operation = await _organizerService.OrganizeDropAsync(
-                    target,
-                    target.Name,
-                    [workItem.Path],
-                    move: true,
-                    useShellProgress: false);
-                moveSucceeded = true;
-                _targetUnavailableNotifiedWidgetIds.TryRemove(target.Id, out _);
-
-                // Moving the source is the transaction boundary. Mark it before
-                // best-effort UI work so refresh/notification failures never retry it.
-                _states.MarkTerminal(
-                    workItem,
-                    DesktopAutoOrganizationItemState.Completed);
-                RemoveFromBaseline(workItem.Path);
-
-                try
+                string historyId;
+                if (target.IsVirtualDesktopGroup)
                 {
-                    await _widgetManager.RefreshFileWidgetAsync(target.Id);
+                    IReadOnlyList<string> affectedIds = VirtualDesktopGroupPolicy.AssignPathsToVirtualGroup(
+                        target,
+                        _settingsService.Settings.Widgets,
+                        [workItem.Path]);
+                    await _settingsService.SaveAsync();
+                    historyId = Guid.NewGuid().ToString("N");
+                    moveSucceeded = true;
+                    _targetUnavailableNotifiedWidgetIds.TryRemove(target.Id, out _);
+
+                    _states.MarkTerminal(
+                        workItem,
+                        DesktopAutoOrganizationItemState.Completed);
+                    RemoveFromBaseline(workItem.Path);
+
+                    foreach (string affectedId in affectedIds)
+                    {
+                        try
+                        {
+                            await _widgetManager.RefreshFileWidgetAsync(affectedId);
+                        }
+                        catch (Exception ex)
+                        {
+                            App.Log($"[DesktopAutoOrganization] Virtual refresh failed for '{affectedId}': {ex}");
+                        }
+                    }
                 }
-                catch (Exception ex)
+                else
                 {
-                    App.Log($"[DesktopAutoOrganization] Refresh failed after moving '{workItem.Path}': {ex}");
+                    OrganizerOperationResult operation = await _organizerService.OrganizeDropAsync(
+                        target,
+                        target.Name,
+                        [workItem.Path],
+                        move: true,
+                        useShellProgress: false);
+                    historyId = operation.History.Id;
+                    moveSucceeded = true;
+                    _targetUnavailableNotifiedWidgetIds.TryRemove(target.Id, out _);
+
+                    // Moving the source is the transaction boundary. Mark it before
+                    // best-effort UI work so refresh/notification failures never retry it.
+                    _states.MarkTerminal(
+                        workItem,
+                        DesktopAutoOrganizationItemState.Completed);
+                    RemoveFromBaseline(workItem.Path);
+
+                    try
+                    {
+                        await _widgetManager.RefreshFileWidgetAsync(target.Id);
+                    }
+                    catch (Exception ex)
+                    {
+                        App.Log($"[DesktopAutoOrganization] Refresh failed after moving '{workItem.Path}': {ex}");
+                    }
                 }
 
                 try
                 {
                     ItemOrganized?.Invoke(new DesktopAutoOrganizationCompleted(
-                        operation.History.Id,
+                        historyId,
                         Path.GetFileName(workItem.Path),
                         target.Id,
                         target.Name));

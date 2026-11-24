@@ -206,7 +206,7 @@ public static class WidgetCompactBoundsCalculator
                 SettingsService.WidgetCompactContentModeSmart,
                 StringComparison.Ordinal))
         {
-            return widgetKind == WidgetKind.Music ? SmartMediaWidth : SmartWidth;
+            return SmartWidth;
         }
 
         return SummaryWidth;

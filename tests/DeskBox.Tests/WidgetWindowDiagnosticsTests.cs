@@ -34,7 +34,7 @@ public sealed class WidgetWindowDiagnosticsTests
         {
             Id = "abcdef123456",
             Name = "Documents",
-            WidgetKind = WidgetKind.QuickCapture
+            WidgetKind = WidgetKind.File
         };
         var diagnostics = new WidgetWindowDiagnostics("Quick", config, () => new IntPtr(0xBEEF));
 
@@ -84,13 +84,13 @@ public sealed class WidgetWindowDiagnosticsTests
         {
             Id = "todo-member",
             Name = "Todo",
-            WidgetKind = WidgetKind.Todo
+            WidgetKind = WidgetKind.File
         };
         var target = new WidgetConfig
         {
             Id = "weather-member",
             Name = "Weather",
-            WidgetKind = WidgetKind.Weather,
+            WidgetKind = WidgetKind.File,
             X = 20,
             Y = 30,
             Width = 240,

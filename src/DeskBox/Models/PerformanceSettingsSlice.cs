@@ -46,12 +46,6 @@ public sealed class PerformanceSettingsSlice
     /// <summary>Whether continuously scrolling title text may run.</summary>
     public bool EnableTextMarqueeAnimations { get; set; } = true;
 
-    /// <summary>Whether music vinyl artwork may rotate while playback is active.</summary>
-    public bool EnableVinylRotationAnimations { get; set; } = true;
-
-    /// <summary>Whether Glance widgets may automatically advance their image rotation.</summary>
-    public bool EnableGlanceImageAutoRotation { get; set; } = true;
-
     /// <summary>Whether capsule glow, particle, breathing, and indeterminate ambient effects may run.</summary>
     public bool EnableCompactAmbientAnimations { get; set; } = true;
 }

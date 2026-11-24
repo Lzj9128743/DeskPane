@@ -230,11 +230,6 @@ public sealed class SettingsService
     public const string ManagedDragOutActionCopy = Contracts.ManagedDropActions.Copy;
     public const string ManagedDragOutActionFollowWindows = Contracts.ManagedDropActions.FollowWindows;
 
-    // Canonical attachment storage modes live in Contracts
-    // (AttachmentStorageModes, batch 50); these historical constants are
-    // aliases so existing consumers keep compiling unchanged.
-    public const string AttachmentStorageModeLink = Contracts.AttachmentStorageModes.Link;
-    public const string AttachmentStorageModeCopy = Contracts.AttachmentStorageModes.Copy;
     // Canonical file-stack option values and caps live in Contracts
     // (FileStackOptionKinds, batch 45); these historical constants are
     // aliases so existing consumers keep compiling unchanged.
@@ -260,12 +255,6 @@ public sealed class SettingsService
     public const string FileStackUnmatchedOther = FileStackOptionKinds.UnmatchedOther;
     public const int MaxFileStackCustomRules = FileStackOptionKinds.MaxCustomRules;
     public const int MaxFileStackExtensionsPerRule = FileStackOptionKinds.MaxExtensionsPerRule;
-    public const int DefaultQuickCaptureItemPreviewLineCount = 3;
-    public const int DefaultTodoItemPreviewLineCount = TodoOptionKinds.DefaultItemPreviewLineCount;
-    public const int MinItemPreviewLineCount = QuickCaptureOptionKinds.MinItemPreviewLineCount;
-    public const int MaxItemPreviewLineCount = QuickCaptureOptionKinds.MaxItemPreviewLineCount;
-    public const string EditorEnterBehaviorCtrlEnterSaves = QuickCaptureOptionKinds.EnterBehaviorCtrlEnterSaves;
-    public const string EditorEnterBehaviorEnterSaves = QuickCaptureOptionKinds.EnterBehaviorEnterSaves;
     public const string LanguageSystem = "System";
     public const string LanguageChinese = "zh-CN";
     public const string LanguageChineseTraditional = "zh-TW";
@@ -298,8 +287,8 @@ public sealed class SettingsService
     public const double MinIconSize = 24;
     public const double MaxIconSize = 56;
     public const double DefaultTextSize = 11.5;
-    public const double MinTextSize = QuickCaptureOptionKinds.MinTextSize;
-    public const double MaxTextSize = QuickCaptureOptionKinds.MaxTextSize;
+    public const double MinTextSize = 10.0;
+    public const double MaxTextSize = 20.0;
     public const double DefaultLayoutDensityScale = 0.56;
     public const double MinLayoutDensityScale = 0.0;
     public const double MaxLayoutDensityScale = 1.0;
@@ -316,59 +305,9 @@ public sealed class SettingsService
     public const string LayoutDensityStandard = Contracts.LayoutDensityKinds.Standard;
     public const string LayoutDensityRelaxed = Contracts.LayoutDensityKinds.Relaxed;
     public const string LayoutDensityCustom = Contracts.LayoutDensityKinds.Custom;
-    // Aliases of the contract-owned canonical values so the feature editor
-    // can build its option list without referencing the settings adapter.
-    public const string MusicDisplayModeAuto = Contracts.MusicDisplayModes.Auto;
-    public const string MusicDisplayModeCover = Contracts.MusicDisplayModes.Cover;
-    public const string MusicDisplayModeControls = Contracts.MusicDisplayModes.Controls;
-    public const string MusicDisplayModeRecordVertical = Contracts.MusicDisplayModes.RecordVertical;
-    public const string MusicDisplayModeRecordHorizontal = Contracts.MusicDisplayModes.RecordHorizontal;
     public const int MaxRecentOrganizationHistoryCount = 24;
-    public const string TodoNewTaskPositionTop = TodoOptionKinds.NewTaskPositionTop;
-    public const string TodoNewTaskPositionBottom = TodoOptionKinds.NewTaskPositionBottom;
-    public const string TodoDefaultFilterAll = TodoOptionKinds.DefaultFilterAll;
-    public const string TodoDefaultFilterActive = TodoOptionKinds.DefaultFilterActive;
-    public const string TodoDefaultFilterToday = TodoOptionKinds.DefaultFilterToday;
-    public const string TodoDefaultFilterThisWeek = TodoOptionKinds.DefaultFilterThisWeek;
-    public const string TodoDefaultFilterThisMonth = TodoOptionKinds.DefaultFilterThisMonth;
-    public const string TodoDefaultFilterImportant = TodoOptionKinds.DefaultFilterImportant;
-    public const string TodoDefaultFilterCompleted = TodoOptionKinds.DefaultFilterCompleted;
-    public const string TodoLayoutModeAuto = TodoOptionKinds.LayoutModeAuto;
-    public const string TodoLayoutModeSinglePane = TodoOptionKinds.LayoutModeSinglePane;
-    public const string TodoLayoutModeDualPane = TodoOptionKinds.LayoutModeDualPane;
-    public const int DefaultTodoReminderOffsetMinutes = TodoOptionKinds.DefaultReminderOffsetMinutes;
-    public const int MinTodoReminderOffsetMinutes = TodoOptionKinds.MinReminderOffsetMinutes;
-    public const int MaxTodoReminderOffsetMinutes = TodoOptionKinds.MaxReminderOffsetMinutes;
-    public const string QuickCaptureDefaultViewRecords = QuickCaptureOptionKinds.DefaultViewRecords;
-    public const string QuickCaptureDefaultViewPinned = QuickCaptureOptionKinds.DefaultViewPinned;
-    public const string QuickCaptureDefaultViewRecent = QuickCaptureOptionKinds.DefaultViewRecent;
-    public const string QuickCaptureFormatMarkdown = QuickCaptureOptionKinds.FormatMarkdown;
-    public const string QuickCaptureFormatPlainText = QuickCaptureOptionKinds.FormatPlainText;
-    public const string QuickCaptureWideLayoutAuto = QuickCaptureOptionKinds.WideLayoutAuto;
-    public const string QuickCaptureWideLayoutSinglePane = QuickCaptureOptionKinds.WideLayoutSinglePane;
-    public const string QuickCaptureWideLayoutDualPane = QuickCaptureOptionKinds.WideLayoutDualPane;
-    public const string QuickCaptureWideOpenReading = QuickCaptureOptionKinds.WideOpenReading;
-    public const string QuickCaptureWideOpenEditing = QuickCaptureOptionKinds.WideOpenEditing;
-    public const string WidgetTabStylePivot = QuickCaptureOptionKinds.TabStylePivot;
-    public const string WidgetTabStyleButton = QuickCaptureOptionKinds.TabStyleButton;
-public const string WeatherTemperatureUnitCelsius = WeatherOptionKinds.TemperatureUnitCelsius;
-public const string WeatherTemperatureUnitFahrenheit = WeatherOptionKinds.TemperatureUnitFahrenheit;
-public const string WeatherWindSpeedUnitKmh = WeatherOptionKinds.WindSpeedUnitKmh;
-public const string WeatherWindSpeedUnitMs = WeatherOptionKinds.WindSpeedUnitMs;
-public const string WeatherWindSpeedUnitMph = WeatherOptionKinds.WindSpeedUnitMph;
-public const string WeatherDefaultViewToday = WeatherOptionKinds.DefaultViewToday;
-public const string WeatherDefaultViewWeek = WeatherOptionKinds.DefaultViewWeek;
-public const string WeatherSkinStandard = WeatherOptionKinds.SkinStandard;
-public const string WeatherSkinRich = WeatherOptionKinds.SkinRich;
-public const string WeatherIconStyleDeskBox = WeatherOptionKinds.IconStyleDeskBox;
-public const string WeatherIconStyleFlat = WeatherOptionKinds.IconStyleFlat;
-public const string WeatherIconStyleLine = WeatherOptionKinds.IconStyleLine;
-public const string WeatherIconStyleFluent = WeatherOptionKinds.IconStyleFluent;
-public const string WeatherDataSourceMsn = WeatherOptionKinds.DataSourceMsn;
-public const string WeatherDataSourceOpenMeteo = WeatherOptionKinds.DataSourceOpenMeteo;
-public const int WeatherRefreshMinMinutes = WeatherOptionKinds.RefreshMinMinutes;
-public const int WeatherRefreshMaxMinutes = WeatherOptionKinds.RefreshMaxMinutes;
-public const int DefaultSearchMaxResults = 100;
+    public const string WidgetTabStylePivot = "Pivot";
+    public const string WidgetTabStyleButton = "Button";
 
     internal static IReadOnlyDictionary<string, DefaultPreferencePreservationReason>
         DefaultPreferencePreservationPolicy { get; } =
@@ -378,9 +317,6 @@ public const int DefaultSearchMaxResults = 100;
                 [nameof(AppSettings.AutoStart)] = DefaultPreferencePreservationReason.SystemIntegration,
                 [nameof(AppSettings.AutoStartDefaultApplied)] = DefaultPreferencePreservationReason.SystemIntegration,
                 [nameof(AppSettings.AutoStartMode)] = DefaultPreferencePreservationReason.SystemIntegration,
-                [nameof(AppSettings.FeatureWidgetEnabledStates)] = DefaultPreferencePreservationReason.UserChoice,
-                [nameof(AppSettings.QuickCaptureEnabled)] = DefaultPreferencePreservationReason.UserChoice,
-                [nameof(AppSettings.TodoEnabled)] = DefaultPreferencePreservationReason.UserChoice,
                 [nameof(AppSettings.Widgets)] = DefaultPreferencePreservationReason.UserData,
                 [nameof(AppSettings.WidgetGroups)] = DefaultPreferencePreservationReason.UserData,
                 [nameof(AppSettings.WidgetTopologyLayouts)] = DefaultPreferencePreservationReason.UserData,
@@ -404,8 +340,6 @@ public const int DefaultSearchMaxResults = 100;
                 [nameof(AppSettings.CloudBackupServerUrl)] = DefaultPreferencePreservationReason.Storage,
                 [nameof(AppSettings.CloudBackupRemotePath)] = DefaultPreferencePreservationReason.Storage,
                 [nameof(AppSettings.CloudBackupUsername)] = DefaultPreferencePreservationReason.UserChoice,
-                [nameof(AppSettings.CloudBackupTodoDataEnabled)] = DefaultPreferencePreservationReason.UserChoice,
-                [nameof(AppSettings.CloudBackupQuickCaptureDataEnabled)] = DefaultPreferencePreservationReason.UserChoice,
                 [nameof(AppSettings.CloudBackupWidgetStyleEnabled)] = DefaultPreferencePreservationReason.UserChoice,
                 [nameof(AppSettings.CloudBackupLastSuccessUtcTicks)] = DefaultPreferencePreservationReason.RuntimeState,
                 [nameof(AppSettings.CloudBackupLastFailureUtcTicks)] = DefaultPreferencePreservationReason.RuntimeState,
@@ -417,12 +351,6 @@ public const int DefaultSearchMaxResults = 100;
                 [nameof(AppSettings.CompletedOnboardingVersion)] = DefaultPreferencePreservationReason.RuntimeState,
                 [nameof(AppSettings.HasResolvedInitialFileWidgetSetup)] = DefaultPreferencePreservationReason.RuntimeState,
                 [nameof(AppSettings.FullyElevatedNoticeAcknowledgedUtcTicks)] = DefaultPreferencePreservationReason.RuntimeState,
-                [nameof(AppSettings.LastQuickCaptureFileWidgetId)] = DefaultPreferencePreservationReason.RuntimeState,
-                [nameof(AppSettings.LastUpdateCheckAt)] = DefaultPreferencePreservationReason.RuntimeState,
-                [nameof(AppSettings.ShowReleaseNotesAfterUpdate)] = DefaultPreferencePreservationReason.UserChoice,
-                [nameof(AppSettings.LastRunVersion)] = DefaultPreferencePreservationReason.RuntimeState,
-                [nameof(AppSettings.AutoDownloadUpdates)] = DefaultPreferencePreservationReason.UserChoice,
-                [nameof(AppSettings.ShowUpdateToastNotification)] = DefaultPreferencePreservationReason.UserChoice,
                 [nameof(AppSettings.SchemaVersion)] = DefaultPreferencePreservationReason.RuntimeState
             };
 
@@ -542,16 +470,12 @@ public const int DefaultSearchMaxResults = 100;
             PerformanceSettingsPolicy.DefaultContinuousDecorativeAnimationsEnabled;
         settings.EnableTextMarqueeAnimations =
             PerformanceSettingsPolicy.DefaultTextMarqueeAnimationsEnabled;
-        settings.EnableVinylRotationAnimations =
-            PerformanceSettingsPolicy.DefaultVinylRotationAnimationsEnabled;
-        settings.EnableGlanceImageAutoRotation =
-            PerformanceSettingsPolicy.DefaultGlanceImageAutoRotationEnabled;
         settings.EnableCompactAmbientAnimations =
             PerformanceSettingsPolicy.DefaultCompactAmbientAnimationsEnabled;
         settings.DefaultWidgetWidth = DefaultWidgetWidth;
         settings.DefaultWidgetHeight = DefaultWidgetHeight;
         settings.WidgetCornerPreference = WidgetCornerPreferenceRound;
-        settings.WidgetMaterialType = WidgetMaterialTypeMica;
+        settings.WidgetMaterialType = WidgetMaterialTypeAcrylic;
         settings.WidgetMaterialIntensity = DefaultWidgetMaterialIntensity;
         settings.WidgetForegroundMode = WidgetForegroundSettings.ModeFollowTheme;
         settings.WidgetForegroundColor = WidgetForegroundSettings.DefaultCustomColorHex;
@@ -627,89 +551,7 @@ public const int DefaultSearchMaxResults = 100;
         settings.HideShortcutExtensionWhenShowingFileExtensions = true;
         settings.ShowHoverButtons = true;
         settings.WidgetHoverButtonActions = DefaultWidgetHoverButtonActions;
-        settings.AutoCheckForUpdates = true;
         settings.SilentStartup = false;
-        settings.QuickCaptureClipboardEnabled = false;
-        settings.QuickCaptureImageClipboardEnabled = false;
-        settings.QuickCaptureRecentLimit = QuickCaptureService.DefaultRecentLimit;
-        settings.QuickCaptureShowCreatedTime = true;
-        settings.QuickCaptureItemPreviewLineCount = DefaultQuickCaptureItemPreviewLineCount;
-        settings.QuickCaptureListTextSize = 0;
-        settings.QuickCaptureContentTextSize = 0;
-        settings.QuickCaptureEditorEnterBehavior = EditorEnterBehaviorCtrlEnterSaves;
-        settings.QuickCaptureDefaultFormat = QuickCaptureFormatMarkdown;
-        settings.QuickCaptureWideLayout = QuickCaptureWideLayoutAuto;
-        settings.QuickCaptureWideOpenMode = QuickCaptureWideOpenReading;
-        settings.QuickCaptureAllowRemoteImages = false;
-        settings.AttachmentStorageMode = AttachmentStorageModeLink;
-        settings.QuickCaptureDefaultView = QuickCaptureDefaultViewRecords;
-        settings.QuickCaptureTabStyle = WidgetTabStyleButton;
-        settings.QuickCaptureShowTabBar = true;
-        settings.QuickCaptureShowRecordsTab = true;
-        settings.QuickCaptureShowPinnedTab = true;
-        settings.QuickCaptureShowRecentTab = true;
-        settings.TodoShowCompletedTasks = false;
-        settings.TodoItemPreviewLineCount = DefaultTodoItemPreviewLineCount;
-        settings.TodoListTextSize = 0;
-        settings.TodoContentTextSize = 0;
-        settings.TodoEditorEnterBehavior = EditorEnterBehaviorCtrlEnterSaves;
-        settings.TodoShowFooterStats = false;
-        settings.TodoShowClearCompletedButton = true;
-        settings.TodoReminderEnabled = true;
-        settings.TodoDefaultReminderOffsetMinutes = DefaultTodoReminderOffsetMinutes;
-        settings.TodoUseWideDetailPane = true;
-        settings.TodoLayoutMode = TodoLayoutModeAuto;
-        settings.TodoAutoSelectFirstInWideLayout = true;
-        settings.MusicUseArtworkBackdrop = true;
-        settings.MusicEnableCoverHoverMotion = true;
-        settings.MusicDisplayMode = MusicDisplayModeAuto;
-        settings.MusicHideTimelineWhenUnavailable = true;
-settings.WeatherAutoLocation = true;
-settings.WeatherCityName = string.Empty;
-settings.WeatherLatitude = 0;
-settings.WeatherLongitude = 0;
-settings.WeatherTemperatureUnit = WeatherTemperatureUnitCelsius;
-settings.WeatherWindSpeedUnit = WeatherWindSpeedUnitKmh;
-settings.WeatherDefaultView = WeatherDefaultViewToday;
-settings.WeatherSkin = WeatherSkinStandard;
-settings.WeatherIconStyle = WeatherIconStyleFluent;
-settings.WeatherDataSource = WeatherDataSourceMsn;
-settings.WeatherShowForecast = true;
-settings.WeatherShowSunrise = true;
-settings.WeatherShowUvIndex = true;
-settings.WeatherShowPrecipitation = true;
-settings.WeatherShowHumidity = true;
-settings.WeatherShowWind = true;
-settings.WeatherShowPressure = false;
-settings.WeatherRefreshIntervalMinutes = 60;
-        settings.SearchHotkeyEnabled = false;
-        settings.SearchHotkeyModifiers = (int)HotkeyModifierKeys.Alt;
-        settings.SearchHotkeyKey = 0x44;
-        settings.SearchDisplayMode = "Spotlight";
-        settings.SearchIncludeDeskBoxContent = true;
-        settings.SearchEverythingEnabled = false;
-        settings.SearchEverythingExecutablePath = string.Empty;
-        settings.SearchEverythingAdvancedSyntaxEnabled = false;
-        settings.SearchShowRecommendations = true;
-        settings.SearchMaxResults = DefaultSearchMaxResults;
-        settings.SearchDefaultTab = "all";
-        settings.SearchSaveHistory = true;
-        settings.SearchAppIconAnimation = 0;
-        settings.SearchPopupCustomX = null;
-        settings.SearchPopupCustomY = null;
-        settings.SearchPopupCustomWidth = null;
-        settings.SearchPopupCustomHeight = null;
-        settings.TodoNewTaskPosition = TodoNewTaskPositionTop;
-        settings.TodoDefaultFilter = TodoDefaultFilterAll;
-        settings.TodoTabStyle = WidgetTabStyleButton;
-        settings.TodoShowTabBar = true;
-        settings.TodoShowAllTab = true;
-        settings.TodoShowActiveTab = false;
-        settings.TodoShowTodayTab = true;
-        settings.TodoShowThisWeekTab = false;
-        settings.TodoShowThisMonthTab = false;
-        settings.TodoShowImportantTab = true;
-        settings.TodoShowCompletedTab = true;
         settings.ManagedDropAction = ManagedDropActionMove;
         settings.ManagedDragOutAction = ManagedDragOutActionFollowWindows;
         settings.DragOutModifierTipEnabled = true;
@@ -727,7 +569,7 @@ settings.WeatherRefreshIntervalMinutes = 60;
         settings.GlobalHotkeyActivationKind = DefaultGlobalHotkeyActivationKind;
         settings.GlobalHotkeyModifiers = DefaultGlobalHotkeyModifiers;
         settings.GlobalHotkeyKey = DefaultGlobalHotkeyKey;
-        settings.DesktopDoubleClickEnabled = false;
+        settings.DesktopDoubleClickEnabled = true;
         settings.DoubleClickToOpen = true;
         settings.FileWidgetFolderOpenBehavior = FileWidgetFolderOpenBehaviorNames.Explorer;
         settings.FileItemSystemContextMenuEnabled = false;
@@ -898,7 +740,6 @@ settings.FocusClickedWidgetOnRaise = false;
                 changed |= PerformanceSettingsPolicy.Normalize(_settings);
                 changed |= NormalizePresentationSettings(_settings);
                 changed |= NormalizeAppearanceSettings(_settings);
-                changed |= NormalizeFeatureWidgetSettings(_settings);
                 changed |= NormalizeWidgetContentSettings(_settings);
                 changed |= NormalizeWidgetTopologyLayouts(_settings);
                 // NormalizeOrganizerSettings deliberately does not run here:
@@ -908,10 +749,6 @@ settings.FocusClickedWidgetOnRaise = false;
                 // enabled rule's target as deleted, disabling the rule and
                 // the master switch on every boot (feedback #553 family).
                 changed |= NormalizeHotkeySettings(_settings);
-                changed |= NormalizeSearchSettings(_settings);
-                changed |= NormalizeQuickCaptureSettings(_settings);
-                changed |= NormalizeTodoSettings(_settings);
-                changed |= NormalizeWeatherSettings(_settings);
                 changed |= NormalizeDeletionSettings(_settings);
                 changed |= DataBackupSettingsPolicy.Normalize(_settings);
 
@@ -942,7 +779,6 @@ settings.FocusClickedWidgetOnRaise = false;
                     // passes — re-run the ones that own layout members
                     // (idempotent on an adopted seed, safe unconditionally).
                     changed |= NormalizeWidgetContentSettings(_settings);
-                    changed |= NormalizeFeatureWidgetSettings(_settings);
                     changed |= NormalizeWidgetTopologyLayouts(_settings);
                     // The organizer normalize READS layout members: rule
                     // validity is judged against this merged list, and its
@@ -1372,7 +1208,6 @@ settings.FocusClickedWidgetOnRaise = false;
     private static bool SnapshotCarriesNullCollections(AppSettings parsed) =>
         parsed.WidgetLayout.Widgets is null ||
         parsed.WidgetLayout.WidgetGroups is null ||
-        parsed.WidgetLayout.FeatureWidgetEnabledStates is null ||
         parsed.WidgetLayout.WidgetTopologyLayouts is null ||
         parsed.WidgetLayout.DeletedWidgetIds is null ||
         parsed.FileWidget.FileStackCustomRules is null ||
@@ -1646,7 +1481,6 @@ settings.FocusClickedWidgetOnRaise = false;
             PerformanceSettingsPolicy.Normalize(_settings);
             NormalizePresentationSettings(_settings);
             NormalizeAppearanceSettings(_settings);
-            NormalizeFeatureWidgetSettings(_settings);
             NormalizeWidgetContentSettings(_settings);
             NormalizeWidgetTopologyLayouts(_settings);
             if (_widgetLayoutMerged)
@@ -1658,10 +1492,6 @@ settings.FocusClickedWidgetOnRaise = false;
                 NormalizeOrganizerSettings(_settings);
             }
             NormalizeHotkeySettings(_settings);
-            NormalizeSearchSettings(_settings);
-            NormalizeQuickCaptureSettings(_settings);
-            NormalizeTodoSettings(_settings);
-            NormalizeWeatherSettings(_settings);
             if (stripLayoutKeys)
             {
                 // Write-time projection: while the layout store owns the
@@ -1947,8 +1777,6 @@ settings.FocusClickedWidgetOnRaise = false;
         // Runtime markers only this process authors would otherwise be
         // rolled back by every settings-host commit that was loaded
         // before the marker flip.
-        parsed.LastUpdateCheckAt = before.LastUpdateCheckAt;
-        parsed.LastRunVersion = before.LastRunVersion;
         parsed.HasResolvedInitialFileWidgetSetup = before.HasResolvedInitialFileWidgetSetup;
         parsed.AutoStartDefaultApplied = before.AutoStartDefaultApplied;
         parsed.FullyElevatedNoticeAcknowledgedUtcTicks =
@@ -2246,21 +2074,11 @@ settings.FocusClickedWidgetOnRaise = false;
         }
 
         if (settings.WidgetMaterialType is not (
-            WidgetMaterialTypeMica or
-            WidgetMaterialTypeMicaAlt or
             WidgetMaterialTypeAcrylic or
-            WidgetMaterialTypeAcrylicBase or
             WidgetMaterialTypeSolid))
         {
-            // Migrate legacy "Auto" to "Acrylic"
-            if (settings.WidgetMaterialType == "Auto")
-            {
-                settings.WidgetMaterialType = WidgetMaterialTypeAcrylic;
-            }
-            else
-            {
-                settings.WidgetMaterialType = WidgetMaterialTypeAcrylic;
-            }
+            // Keep only Acrylic and Solid (Transparent); migrate legacy Mica/AcrylicBase/Auto to Acrylic.
+            settings.WidgetMaterialType = WidgetMaterialTypeAcrylic;
             changed = true;
         }
 
@@ -2664,19 +2482,6 @@ settings.FocusClickedWidgetOnRaise = false;
             changed = true;
         }
 
-        changed |= NormalizeOptionalTextSize(
-            settings.QuickCaptureListTextSize,
-            value => settings.QuickCaptureListTextSize = value);
-        changed |= NormalizeOptionalTextSize(
-            settings.QuickCaptureContentTextSize,
-            value => settings.QuickCaptureContentTextSize = value);
-        changed |= NormalizeOptionalTextSize(
-            settings.TodoListTextSize,
-            value => settings.TodoListTextSize = value);
-        changed |= NormalizeOptionalTextSize(
-            settings.TodoContentTextSize,
-            value => settings.TodoContentTextSize = value);
-
         double legacyLayoutDensityScale = settings.LayoutDensityScale;
         if (!double.IsFinite(legacyLayoutDensityScale))
         {
@@ -2740,13 +2545,6 @@ settings.FocusClickedWidgetOnRaise = false;
             changed = true;
         }
 
-        string normalizedMusicDisplayMode = NormalizeMusicDisplayMode(settings.MusicDisplayMode);
-        if (!string.Equals(settings.MusicDisplayMode, normalizedMusicDisplayMode, StringComparison.Ordinal))
-        {
-            settings.MusicDisplayMode = normalizedMusicDisplayMode;
-            changed = true;
-        }
-
         double normalizedWidgetWidth = double.IsFinite(settings.DefaultWidgetWidth)
             ? Math.Clamp(settings.DefaultWidgetWidth, MinWidgetWidth, 1200)
             : DefaultWidgetWidth;
@@ -2804,18 +2602,6 @@ settings.FocusClickedWidgetOnRaise = false;
 
         assign(normalized);
         return true;
-    }
-
-    public static string NormalizeMusicDisplayMode(string? mode)
-    {
-        return mode switch
-        {
-            MusicDisplayModeCover => MusicDisplayModeCover,
-            MusicDisplayModeControls => MusicDisplayModeControls,
-            MusicDisplayModeRecordVertical => MusicDisplayModeRecordVertical,
-            MusicDisplayModeRecordHorizontal => MusicDisplayModeRecordHorizontal,
-            _ => MusicDisplayModeAuto
-        };
     }
 
     public static bool TryGetLayoutDensityPresetValues(
@@ -3117,20 +2903,14 @@ settings.FocusClickedWidgetOnRaise = false;
             changed = true;
         }
 
-        int removedProductivityWidgets = settings.Widgets.RemoveAll(widget => widget.WidgetKind == WidgetKind.Productivity);
-        if (removedProductivityWidgets > 0)
+        int removedUnsupportedWidgets = settings.Widgets.RemoveAll(widget => widget.WidgetKind != WidgetKind.File);
+        if (removedUnsupportedWidgets > 0)
         {
             changed = true;
         }
 
         foreach (var widget in settings.Widgets)
         {
-            if (widget.WidgetKind is WidgetKind.Productivity)
-            {
-                widget.WidgetKind = WidgetKind.File;
-                changed = true;
-            }
-
             if (!WidgetRegistry.Default.IsKnown(widget.WidgetKind))
             {
                 widget.WidgetKind = WidgetKind.File;
@@ -3233,7 +3013,7 @@ settings.FocusClickedWidgetOnRaise = false;
                 changed = true;
             }
 
-            if (widget.IsDisabled && widget.WidgetKind != WidgetKind.Glance)
+            if (widget.IsDisabled)
             {
                 widget.IsDisabled = false;
                 changed = true;
@@ -3241,11 +3021,6 @@ settings.FocusClickedWidgetOnRaise = false;
         }
 
         return changed;
-    }
-
-    internal static bool NormalizeFeatureWidgetSettings(AppSettings settings)
-    {
-        return FeatureWidgetSettings.Normalize(settings);
     }
 
     public static string GetDefaultManagedStorageRootPath()
@@ -3279,13 +3054,6 @@ settings.FocusClickedWidgetOnRaise = false;
     private static bool NormalizeOrganizerSettings(AppSettings settings)
     {
         bool changed = false;
-
-        string normalizedAttachmentStorageMode = NormalizeAttachmentStorageMode(settings.AttachmentStorageMode);
-        if (!string.Equals(settings.AttachmentStorageMode, normalizedAttachmentStorageMode, StringComparison.Ordinal))
-        {
-            settings.AttachmentStorageMode = normalizedAttachmentStorageMode;
-            changed = true;
-        }
 
         string normalizedFileStackGroupBy = NormalizeFileStackGroupBy(settings.FileStackGroupBy);
         if (normalizedFileStackGroupBy == FileStackGroupByDateAdded)
@@ -3558,13 +3326,6 @@ settings.FocusClickedWidgetOnRaise = false;
             .ToList();
     }
 
-    public static string NormalizeAttachmentStorageMode(string? storageMode)
-    {
-        return string.Equals(storageMode, AttachmentStorageModeCopy, StringComparison.OrdinalIgnoreCase)
-            ? AttachmentStorageModeCopy
-            : AttachmentStorageModeLink;
-    }
-
     // Canonical file-stack normalizers live in Contracts
     // (FileStackOptionKinds, batch 45); these historical overloads delegate.
     public static string NormalizeFileStackGroupBy(string? groupBy) =>
@@ -3645,422 +3406,6 @@ settings.FocusClickedWidgetOnRaise = false;
             settings.GlobalHotkeyActivationKind = DefaultGlobalHotkeyActivationKind;
             settings.GlobalHotkeyModifiers = DefaultGlobalHotkeyModifiers;
             settings.GlobalHotkeyKey = DefaultGlobalHotkeyKey;
-            changed = true;
-        }
-
-        // Normalize the search hotkey modifiers.
-        int searchNormalizedModifiers = (int)((Models.HotkeyModifierKeys)settings.SearchHotkeyModifiers &
-            (Models.HotkeyModifierKeys.Alt | Models.HotkeyModifierKeys.Control | Models.HotkeyModifierKeys.Shift));
-        if (settings.SearchHotkeyModifiers != searchNormalizedModifiers)
-        {
-            settings.SearchHotkeyModifiers = searchNormalizedModifiers;
-            changed = true;
-        }
-
-        // Alt+Space rides the opt-in reserved hook and can only belong to one
-        // hotkey at a time. When the main hotkey owns it, reset a saved Alt+Space
-        // search gesture to the working default (Alt+D) so search stays usable.
-        var searchModifiers = (Models.HotkeyModifierKeys)settings.SearchHotkeyModifiers;
-        if (settings.SearchHotkeyKey == 0x20 && searchModifiers == Models.HotkeyModifierKeys.Alt &&
-            settings.GlobalHotkeyActivationKind == Models.HotkeyActivationKind.Chord &&
-            settings.GlobalHotkeyModifiers == (int)Models.HotkeyModifierKeys.Alt &&
-            settings.GlobalHotkeyKey == 0x20)
-        {
-            settings.SearchHotkeyModifiers = (int)Models.HotkeyModifierKeys.Alt;
-            settings.SearchHotkeyKey = 0x44; // D
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    private static bool NormalizeSearchSettings(AppSettings settings)
-    {
-        bool changed = false;
-
-        string everythingPath = settings.SearchEverythingExecutablePath?.Trim() ?? string.Empty;
-        if (!string.Equals(
-                settings.SearchEverythingExecutablePath,
-                everythingPath,
-                StringComparison.Ordinal))
-        {
-            settings.SearchEverythingExecutablePath = everythingPath;
-            changed = true;
-        }
-
-        string normalized = settings.SearchDefaultTab?.Trim().ToLowerInvariant() ?? "all";
-        if (normalized is not ("all" or "app" or "file" or "deskbox"))
-        {
-            normalized = "all";
-        }
-
-        if (!string.Equals(settings.SearchDefaultTab, normalized, StringComparison.Ordinal))
-        {
-            settings.SearchDefaultTab = normalized;
-            changed = true;
-        }
-
-        if (settings.SearchMaxResults is not (50 or 100 or 200))
-        {
-            settings.SearchMaxResults = DefaultSearchMaxResults;
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    private static bool NormalizeQuickCaptureSettings(AppSettings settings)
-    {
-        bool changed = false;
-
-        int normalizedPreviewLineCount = NormalizeItemPreviewLineCount(
-            settings.QuickCaptureItemPreviewLineCount);
-        if (settings.QuickCaptureItemPreviewLineCount != normalizedPreviewLineCount)
-        {
-            settings.QuickCaptureItemPreviewLineCount = normalizedPreviewLineCount;
-            changed = true;
-        }
-
-        string normalizedEnterBehavior = NormalizeEditorEnterBehavior(
-            settings.QuickCaptureEditorEnterBehavior);
-        if (!string.Equals(
-                settings.QuickCaptureEditorEnterBehavior,
-                normalizedEnterBehavior,
-                StringComparison.Ordinal))
-        {
-            settings.QuickCaptureEditorEnterBehavior = normalizedEnterBehavior;
-            changed = true;
-        }
-
-        string normalizedFormat = NormalizeQuickCaptureFormat(settings.QuickCaptureDefaultFormat);
-        if (!string.Equals(settings.QuickCaptureDefaultFormat, normalizedFormat, StringComparison.Ordinal))
-        {
-            settings.QuickCaptureDefaultFormat = normalizedFormat;
-            changed = true;
-        }
-
-        string normalizedWideLayout = NormalizeQuickCaptureWideLayout(settings.QuickCaptureWideLayout);
-        if (!string.Equals(settings.QuickCaptureWideLayout, normalizedWideLayout, StringComparison.Ordinal))
-        {
-            settings.QuickCaptureWideLayout = normalizedWideLayout;
-            changed = true;
-        }
-
-        string normalizedWideOpenMode = NormalizeQuickCaptureWideOpenMode(settings.QuickCaptureWideOpenMode);
-        if (!string.Equals(settings.QuickCaptureWideOpenMode, normalizedWideOpenMode, StringComparison.Ordinal))
-        {
-            settings.QuickCaptureWideOpenMode = normalizedWideOpenMode;
-            changed = true;
-        }
-
-        int normalizedLimit = QuickCaptureService.NormalizeRecentLimit(settings.QuickCaptureRecentLimit);
-        if (settings.QuickCaptureRecentLimit != normalizedLimit)
-        {
-            settings.QuickCaptureRecentLimit = normalizedLimit;
-            changed = true;
-        }
-
-        string normalizedLastFileWidgetId = string.IsNullOrWhiteSpace(settings.LastQuickCaptureFileWidgetId)
-            ? string.Empty
-            : settings.LastQuickCaptureFileWidgetId.Trim();
-        if (!string.Equals(settings.LastQuickCaptureFileWidgetId, normalizedLastFileWidgetId, StringComparison.Ordinal))
-        {
-            settings.LastQuickCaptureFileWidgetId = normalizedLastFileWidgetId;
-            changed = true;
-        }
-
-        string normalizedDefaultView = NormalizeQuickCaptureDefaultView(
-            settings.QuickCaptureDefaultView);
-        if (settings.QuickCaptureDefaultView != normalizedDefaultView)
-        {
-            settings.QuickCaptureDefaultView = normalizedDefaultView;
-            changed = true;
-        }
-
-        if (!settings.QuickCaptureShowRecordsTab &&
-            !settings.QuickCaptureShowPinnedTab &&
-            !settings.QuickCaptureShowRecentTab)
-        {
-            settings.QuickCaptureShowRecordsTab = true;
-            changed = true;
-        }
-
-        if (!IsQuickCaptureTabVisible(settings, settings.QuickCaptureDefaultView))
-        {
-            settings.QuickCaptureDefaultView = GetFirstVisibleQuickCaptureTab(settings);
-            changed = true;
-        }
-
-        string normalizedTabStyle = NormalizeWidgetTabStyle(settings.QuickCaptureTabStyle);
-        if (!string.Equals(settings.QuickCaptureTabStyle, normalizedTabStyle, StringComparison.Ordinal))
-        {
-            settings.QuickCaptureTabStyle = normalizedTabStyle;
-            changed = true;
-        }
-
-        if (!FeatureWidgetSettings.IsEnabled(settings, WidgetKind.QuickCapture))
-        {
-            if (settings.QuickCaptureClipboardEnabled)
-            {
-                settings.QuickCaptureClipboardEnabled = false;
-                changed = true;
-            }
-
-            if (settings.QuickCaptureImageClipboardEnabled)
-            {
-                settings.QuickCaptureImageClipboardEnabled = false;
-                changed = true;
-            }
-        }
-        else if (!settings.QuickCaptureClipboardEnabled && settings.QuickCaptureImageClipboardEnabled)
-        {
-            settings.QuickCaptureImageClipboardEnabled = false;
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    internal static bool NormalizeTodoSettings(AppSettings settings)
-    {
-        bool changed = false;
-
-        string normalizedLayoutMode = NormalizeTodoLayoutMode(
-            settings.TodoLayoutMode,
-            settings.TodoUseWideDetailPane);
-        if (!string.Equals(settings.TodoLayoutMode, normalizedLayoutMode, StringComparison.Ordinal))
-        {
-            settings.TodoLayoutMode = normalizedLayoutMode;
-            changed = true;
-        }
-
-        bool legacyWideDetailValue = normalizedLayoutMode != TodoLayoutModeSinglePane;
-        if (settings.TodoUseWideDetailPane != legacyWideDetailValue)
-        {
-            settings.TodoUseWideDetailPane = legacyWideDetailValue;
-            changed = true;
-        }
-
-        int normalizedPreviewLineCount = NormalizeItemPreviewLineCount(
-            settings.TodoItemPreviewLineCount);
-        if (settings.TodoItemPreviewLineCount != normalizedPreviewLineCount)
-        {
-            settings.TodoItemPreviewLineCount = normalizedPreviewLineCount;
-            changed = true;
-        }
-
-        string normalizedEnterBehavior = NormalizeEditorEnterBehavior(
-            settings.TodoEditorEnterBehavior);
-        if (!string.Equals(
-                settings.TodoEditorEnterBehavior,
-                normalizedEnterBehavior,
-                StringComparison.Ordinal))
-        {
-            settings.TodoEditorEnterBehavior = normalizedEnterBehavior;
-            changed = true;
-        }
-
-        if (settings.TodoNewTaskPosition != NormalizeTodoNewTaskPosition(
-                settings.TodoNewTaskPosition))
-        {
-            settings.TodoNewTaskPosition = TodoNewTaskPositionTop;
-            changed = true;
-        }
-
-        if (settings.TodoDefaultFilter != NormalizeTodoDefaultFilter(
-                settings.TodoDefaultFilter))
-        {
-            settings.TodoDefaultFilter = TodoDefaultFilterAll;
-            changed = true;
-        }
-
-        if (!settings.TodoShowAllTab &&
-            !settings.TodoShowActiveTab &&
-            !settings.TodoShowTodayTab &&
-            !settings.TodoShowThisWeekTab &&
-            !settings.TodoShowThisMonthTab &&
-            !settings.TodoShowImportantTab &&
-            !settings.TodoShowCompletedTab)
-        {
-            settings.TodoShowAllTab = true;
-            changed = true;
-        }
-
-        if (!IsTodoTabVisible(settings, settings.TodoDefaultFilter))
-        {
-            settings.TodoDefaultFilter = GetFirstVisibleTodoTab(settings);
-            changed = true;
-        }
-
-        int normalizedReminderOffset = NormalizeTodoReminderOffsetMinutes(settings.TodoDefaultReminderOffsetMinutes);
-        if (settings.TodoDefaultReminderOffsetMinutes != normalizedReminderOffset)
-        {
-            settings.TodoDefaultReminderOffsetMinutes = normalizedReminderOffset;
-            changed = true;
-        }
-
-        string normalizedTabStyle = NormalizeWidgetTabStyle(settings.TodoTabStyle);
-        if (!string.Equals(settings.TodoTabStyle, normalizedTabStyle, StringComparison.Ordinal))
-        {
-            settings.TodoTabStyle = normalizedTabStyle;
-            changed = true;
-        }
-
-        return changed;
-    }
-
-    public static string NormalizeTodoLayoutMode(
-        string? mode,
-        bool legacyUseWideDetailPane = true) =>
-        TodoOptionKinds.NormalizeLayoutMode(mode, legacyUseWideDetailPane);
-
-    public static int NormalizeItemPreviewLineCount(int lineCount) =>
-        QuickCaptureOptionKinds.NormalizeItemPreviewLineCount(lineCount);
-
-    public static string NormalizeEditorEnterBehavior(string? behavior) =>
-        QuickCaptureOptionKinds.NormalizeEnterBehavior(behavior);
-
-    public static bool ShouldSubmitEditorOnEnter(string? behavior, bool controlPressed) =>
-        NormalizeEditorEnterBehavior(behavior) == EditorEnterBehaviorEnterSaves
-            ? !controlPressed
-            : controlPressed;
-
-    public static string NormalizeTodoNewTaskPosition(string? position) =>
-        TodoOptionKinds.NormalizeNewTaskPosition(position);
-
-    public static string NormalizeWidgetTabStyle(string? style) =>
-        QuickCaptureOptionKinds.NormalizeTabStyle(style);
-
-    public static string NormalizeQuickCaptureFormat(string? format) =>
-        QuickCaptureOptionKinds.NormalizeFormat(format);
-
-    public static TextContentFormat ResolveQuickCaptureEditorContentFormat(string? format) =>
-        NormalizeQuickCaptureFormat(format) == QuickCaptureFormatPlainText
-            ? TextContentFormat.PlainText
-            : TextContentFormat.Markdown;
-
-    public static string NormalizeQuickCaptureWideLayout(string? layout) =>
-        QuickCaptureOptionKinds.NormalizeWideLayout(layout);
-
-    public static string NormalizeQuickCaptureWideOpenMode(string? mode) =>
-        QuickCaptureOptionKinds.NormalizeWideOpenMode(mode);
-
-    public static string NormalizeQuickCaptureDefaultView(string? view) =>
-        QuickCaptureOptionKinds.NormalizeDefaultView(view);
-
-    public static bool IsQuickCaptureTabVisible(AppSettings settings, string? view) => view switch
-    {
-        QuickCaptureDefaultViewPinned => settings.QuickCaptureShowPinnedTab,
-        QuickCaptureDefaultViewRecent => settings.QuickCaptureShowRecentTab,
-        _ => settings.QuickCaptureShowRecordsTab
-    };
-
-    public static string GetFirstVisibleQuickCaptureTab(AppSettings settings)
-    {
-        if (settings.QuickCaptureShowRecordsTab) return QuickCaptureDefaultViewRecords;
-        if (settings.QuickCaptureShowPinnedTab) return QuickCaptureDefaultViewPinned;
-        if (settings.QuickCaptureShowRecentTab) return QuickCaptureDefaultViewRecent;
-        return QuickCaptureDefaultViewRecords;
-    }
-
-    public static string NormalizeTodoDefaultFilter(string? filter) =>
-        TodoOptionKinds.NormalizeDefaultFilter(filter);
-
-    public static bool IsTodoTabVisible(AppSettings settings, string? filter) =>
-        IsTodoTabVisible(settings.Todo, filter);
-
-    public static bool IsTodoTabVisible(TodoSettingsSlice todo, string? filter) => filter switch
-    {
-        TodoDefaultFilterActive => todo.TodoShowActiveTab,
-        TodoDefaultFilterToday => todo.TodoShowTodayTab,
-        TodoDefaultFilterThisWeek => todo.TodoShowThisWeekTab,
-        TodoDefaultFilterThisMonth => todo.TodoShowThisMonthTab,
-        TodoDefaultFilterImportant => todo.TodoShowImportantTab,
-        TodoDefaultFilterCompleted => todo.TodoShowCompletedTab,
-        _ => todo.TodoShowAllTab
-    };
-
-    public static string GetFirstVisibleTodoTab(AppSettings settings) =>
-        GetFirstVisibleTodoTab(settings.Todo);
-
-    public static string GetFirstVisibleTodoTab(TodoSettingsSlice todo)
-    {
-        if (todo.TodoShowAllTab) return TodoDefaultFilterAll;
-        if (todo.TodoShowActiveTab) return TodoDefaultFilterActive;
-        if (todo.TodoShowTodayTab) return TodoDefaultFilterToday;
-        if (todo.TodoShowThisWeekTab) return TodoDefaultFilterThisWeek;
-        if (todo.TodoShowThisMonthTab) return TodoDefaultFilterThisMonth;
-        if (todo.TodoShowImportantTab) return TodoDefaultFilterImportant;
-        if (todo.TodoShowCompletedTab) return TodoDefaultFilterCompleted;
-        return TodoDefaultFilterAll;
-    }
-
-    public static int NormalizeTodoReminderOffsetMinutes(int minutes) =>
-        TodoOptionKinds.NormalizeReminderOffsetMinutes(minutes);
-
-    internal static bool NormalizeWeatherSettings(AppSettings settings)
-    {
-        bool changed = false;
-
-        string normalizedTempUnit = settings.WeatherTemperatureUnit is WeatherTemperatureUnitFahrenheit
-            ? WeatherTemperatureUnitFahrenheit
-            : WeatherTemperatureUnitCelsius;
-        if (!string.Equals(settings.WeatherTemperatureUnit, normalizedTempUnit, StringComparison.Ordinal))
-        {
-            settings.WeatherTemperatureUnit = normalizedTempUnit;
-            changed = true;
-        }
-
-        string normalizedWindUnit = settings.WeatherWindSpeedUnit is WeatherWindSpeedUnitMs or WeatherWindSpeedUnitMph
-            ? settings.WeatherWindSpeedUnit
-            : WeatherWindSpeedUnitKmh;
-        if (!string.Equals(settings.WeatherWindSpeedUnit, normalizedWindUnit, StringComparison.Ordinal))
-        {
-            settings.WeatherWindSpeedUnit = normalizedWindUnit;
-            changed = true;
-        }
-
-        string normalizedView = settings.WeatherDefaultView is WeatherDefaultViewWeek
-            ? WeatherDefaultViewWeek
-            : WeatherDefaultViewToday;
-        if (!string.Equals(settings.WeatherDefaultView, normalizedView, StringComparison.Ordinal))
-        {
-            settings.WeatherDefaultView = normalizedView;
-            changed = true;
-        }
-
-        string normalizedSkin = settings.WeatherSkin is WeatherSkinRich
-            ? WeatherSkinRich
-            : WeatherSkinStandard;
-        if (!string.Equals(settings.WeatherSkin, normalizedSkin, StringComparison.Ordinal))
-        {
-            settings.WeatherSkin = normalizedSkin;
-            changed = true;
-        }
-
-        string normalizedIconStyle = WeatherOptionKinds.NormalizeIconStyle(settings.WeatherIconStyle);
-        if (!string.Equals(settings.WeatherIconStyle, normalizedIconStyle, StringComparison.Ordinal))
-        {
-            settings.WeatherIconStyle = normalizedIconStyle;
-            changed = true;
-        }
-
-        string normalizedDataSource = settings.WeatherDataSource is WeatherDataSourceOpenMeteo
-            ? WeatherDataSourceOpenMeteo
-            : WeatherDataSourceMsn;
-        if (!string.Equals(settings.WeatherDataSource, normalizedDataSource, StringComparison.Ordinal))
-        {
-            settings.WeatherDataSource = normalizedDataSource;
-            changed = true;
-        }
-
-        int clampedRefresh = Math.Clamp(
-            settings.WeatherRefreshIntervalMinutes,
-            WeatherRefreshMinMinutes,
-            WeatherRefreshMaxMinutes);
-        if (settings.WeatherRefreshIntervalMinutes != clampedRefresh)
-        {
-            settings.WeatherRefreshIntervalMinutes = clampedRefresh;
             changed = true;
         }
 

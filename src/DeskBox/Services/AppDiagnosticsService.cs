@@ -47,11 +47,9 @@ public sealed class AppDiagnosticsService : IDisposable
     public string LastLifecycleReason => _lastLifecycleReason;
 
     public AppRuntimeHealthSnapshot GetRuntimeHealthSnapshot(
-        EverythingSearchService? everythingSearch,
         IEnumerable<FolderWatcherHealthSnapshot>? folderWatchers = null)
     {
         var folderHealth = folderWatchers?.ToList() ?? [];
-        EverythingConnectionSnapshot? everything = everythingSearch?.CurrentSnapshot;
         return new AppRuntimeHealthSnapshot(
             LifecycleEventCount,
             LastLifecycleEventAt,
@@ -60,7 +58,7 @@ public sealed class AppDiagnosticsService : IDisposable
             SearchWatcherRecoveryCount: 0,
             LastSearchWatcherRecoveryTime: null,
             IndexedEntryCount: 0,
-            IsSearchScanning: everything?.State == EverythingConnectionState.Checking,
+            IsSearchScanning: false,
             LastSearchScanTime: null,
             FailedSearchWatcherCount: 0,
             OfflineSearchRootCount: 0,
@@ -71,9 +69,7 @@ public sealed class AppDiagnosticsService : IDisposable
             IsUsnIndexIncrementalSyncing: false,
             OfflineFolderCount: folderHealth.Count(item => item.Status == FolderWatcherHealth.Unavailable),
             DegradedFolderCount: folderHealth.Count(item => item.Status == FolderWatcherHealth.Degraded),
-            AccessDeniedFolderCount: folderHealth.Count(item => item.Status == FolderWatcherHealth.AccessDenied),
-            EverythingState: everything?.State,
-            EverythingVersion: everything?.Version);
+            AccessDeniedFolderCount: folderHealth.Count(item => item.Status == FolderWatcherHealth.AccessDenied));
     }
 
     /// <summary>
@@ -212,6 +208,4 @@ public sealed record AppRuntimeHealthSnapshot(
     bool IsUsnIndexIncrementalSyncing = false,
     int OfflineFolderCount = 0,
     int DegradedFolderCount = 0,
-    int AccessDeniedFolderCount = 0,
-    EverythingConnectionState? EverythingState = null,
-    string? EverythingVersion = null);
+    int AccessDeniedFolderCount = 0);

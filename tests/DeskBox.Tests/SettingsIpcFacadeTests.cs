@@ -108,68 +108,30 @@ public sealed class SettingsIpcFacadeTests : IDisposable
         public void ResumeHotkeysAfterRecording() => ResumeCalled = true;
     }
 
-    private sealed class FakeDataActions : ISettingsDataActions
-    {
-        public (int Active, int Recent) Counts = (7, 3);
-        public bool Cleared;
-        public bool ClearedRecent;
-        public bool CleanupCalled;
-        public QuickCaptureImageCacheInfo? InfoToReturn = new(4, 1024, 1, 256);
-
-        public Task<(int ActiveCount, int RecentCount)> GetQuickCaptureCountsAsync() =>
-            Task.FromResult(Counts);
-
-        public Task ClearQuickCaptureDataAsync()
-        {
-            Cleared = true;
-            return Task.CompletedTask;
-        }
-
-        public Task ClearQuickCaptureRecentAsync()
-        {
-            ClearedRecent = true;
-            return Task.CompletedTask;
-        }
-
-        public Task<QuickCaptureImageCacheCleanupResult> ClearUnusedQuickCaptureImageCacheAsync()
-        {
-            CleanupCalled = true;
-            return Task.FromResult(new QuickCaptureImageCacheCleanupResult(1, 256));
-        }
-
-        public Task<QuickCaptureImageCacheInfo?> GetQuickCaptureImageCacheInfoAsync() =>
-            Task.FromResult(InfoToReturn);
-    }
-
     private sealed record Loopback(
         SettingsIpcServer Server,
         FakeHotkeyActions Hotkey,
-        FakeDataActions Data,
         FakeRestoreActions Restore,
         FakeWidgetActions Widget,
         FakeAppActions AppActions,
         FakeBackupCommands BackupCommands,
         FakeBackupRestore BackupRestore,
         FakeBackupSettings BackupSettings,
-        FakeUpdateService UpdateService,
         SettingsIpcClient Client);
 
     private static async Task<Loopback> StartLoopbackAsync(string pipeName, SettingsService settings)
     {
         var hotkey = new FakeHotkeyActions();
-        var data = new FakeDataActions();
         var restore = new FakeRestoreActions();
         var widget = new FakeWidgetActions();
         var appActions = new FakeAppActions();
         var backupCommands = new FakeBackupCommands();
         var backupRestore = new FakeBackupRestore();
         var backupSettings = new FakeBackupSettings();
-        var updateService = new FakeUpdateService();
         SettingsIpcServer? server = null;
         var router = new SettingsIpcMethodRouter(
             settings,
             hotkey,
-            data,
             restore,
             widget,
             appActions,
@@ -177,15 +139,14 @@ public sealed class SettingsIpcFacadeTests : IDisposable
                 server?.SendEventAsync(method, payload) ?? Task.CompletedTask,
             backupCommands: backupCommands,
             backupRestore: backupRestore,
-            backupSettings: backupSettings,
-            appUpdate: updateService);
+            backupSettings: backupSettings);
         server = SettingsIpcServer.Start(pipeName, router.DispatchAsync);
         var client = await SettingsIpcClient.ConnectAsync(pipeName, TimeSpan.FromMilliseconds(200), attempts: 25);
         (bool ok, string? payload, _) = await client.RequestAsync(SettingsIpcMethods.Ping);
         Assert.True(ok, "loopback ping failed: " + payload);
         return new Loopback(
-            server, hotkey, data, restore, widget, appActions,
-            backupCommands, backupRestore, backupSettings, updateService, client);
+            server, hotkey, restore, widget, appActions,
+            backupCommands, backupRestore, backupSettings, client);
     }
 
     private static string PipeName() => "deskbox-tests-facade-ipc-" + Guid.NewGuid().ToString("N");
@@ -361,42 +322,6 @@ public sealed class SettingsIpcFacadeTests : IDisposable
         {
             await client.DisposeAsync();
             await loop.Server.DisposeAsync();
-        }
-    }
-
-    [Fact]
-    public async Task DataFacade_RoundTripsEveryCommand()
-    {
-        var settings = new SettingsService(_tempRoot);
-        var loop = await StartLoopbackAsync(PipeName(), settings);
-        var server = loop.Server;
-        var data = loop.Data;
-        var client = loop.Client;
-        var remote = new RemoteSettingsDataActions(client);
-        try
-        {
-            (int active, int recent) = await remote.GetQuickCaptureCountsAsync();
-            Assert.Equal((7, 3), (active, recent));
-
-            await remote.ClearQuickCaptureDataAsync();
-            Assert.True(data.Cleared);
-
-            await remote.ClearQuickCaptureRecentAsync();
-            Assert.True(data.ClearedRecent);
-
-            QuickCaptureImageCacheCleanupResult cleanup = await remote.ClearUnusedQuickCaptureImageCacheAsync();
-            Assert.True(data.CleanupCalled);
-            Assert.Equal(1, cleanup.DeletedFileCount);
-            Assert.Equal(256, cleanup.DeletedBytes);
-
-            QuickCaptureImageCacheInfo? info = await remote.GetQuickCaptureImageCacheInfoAsync();
-            Assert.NotNull(info);
-            Assert.Equal(4, info!.TotalFileCount);
-        }
-        finally
-        {
-            await client.DisposeAsync();
-            await server.DisposeAsync();
         }
     }
 
@@ -847,12 +772,6 @@ public sealed class SettingsIpcFacadeTests : IDisposable
             var remote = new RemoteSettingsWidgetActions(loop.Client, hostMirror);
 
             Assert.True(remote.IsHostAvailable);
-            // Batch R11: the getter reads the local layout mirror (layout
-            // pushes + write responses keep it current) instead of costing
-            // a synchronous roundtrip per feature entry per reload push.
-            DeskBox.Services.FeatureWidgetSettings.SetEnabled(
-                hostMirror.Settings, WidgetKind.Todo, true);
-            Assert.True(remote.IsFeatureWidgetEnabled(WidgetKind.Todo));
 
             remote.RefreshVisibleWidgetDesktopLayers("test-layer");
             await UntilAsync(() => loop.Widget.LayerReason == "test-layer");
@@ -1159,63 +1078,6 @@ public sealed class SettingsIpcFacadeTests : IDisposable
         }
     }
 
-    private sealed class FakeUpdateService : IAppUpdateService
-    {
-        public AppUpdateCheckResult CheckResult = new(
-            DeskBox.Models.AppUpdateCheckStatus.UpdateAvailable,
-            "1.5.9",
-            new DeskBox.Models.AppUpdateManifest());
-        public string? CheckVersionArg;
-        public DeskBox.Models.AppUpdateManifest? DownloadManifestArg;
-        public string? InstallerPathArg;
-        public string InstallerUrlResult = "https://update/next";
-
-        public event Action<DeskBox.Models.AppUpdateCheckResult>? CheckCompleted;
-
-        public event Action<DeskBox.Models.AppUpdateDownloadProgress>? DownloadProgressChanged;
-
-        public event Action<DeskBox.Models.AppUpdateDownloadResult>? DownloadCompleted;
-
-        public AppUpdateCheckResult? LastCheckResult => CheckResult;
-
-        public DateTime? LastCheckTimeUtc => new(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc);
-
-        public string ManifestUrl => InstallerUrlResult;
-
-        public AppUpdateDeliveryKind DeliveryKind => AppUpdateDeliveryKind.DirectInstaller;
-
-        public string? LastDownloadedInstallerPath => "C:\\downloads\\setup.exe";
-
-        public bool IsDownloadInProgress => false;
-
-        public Task<AppUpdateCheckResult> CheckForUpdatesAsync(CancellationToken cancellationToken = default) =>
-            Task.FromResult(CheckResult);
-
-        public Task<AppUpdateCheckResult> CheckForUpdatesAsync(string currentVersion, CancellationToken cancellationToken = default)
-        {
-            CheckVersionArg = currentVersion;
-            return Task.FromResult(CheckResult);
-        }
-
-        public Task<DeskBox.Models.AppUpdateDownloadResult> DownloadUpdateAsync(
-            DeskBox.Models.AppUpdateManifest manifest,
-            IProgress<DeskBox.Models.AppUpdateDownloadProgress>? progress = null,
-            CancellationToken cancellationToken = default)
-        {
-            DownloadManifestArg = manifest;
-            return Task.FromResult(DeskBox.Models.AppUpdateDownloadResult.Completed("C:/downloads/setup.exe"));
-        }
-
-        // ClearLastDownloadedInstaller / PruneStaleInstallerDirectories
-        // left the interface with their dead IPC wires (deep review R13-2).
-
-        public AppUpdateInstallResult StartInstallerHelper(string installerPath, bool silent = true, string? appCultureName = null)
-        {
-            InstallerPathArg = installerPath;
-            return AppUpdateInstallResult.Started();
-        }
-    }
-
     [Fact]
     public async Task BackupSurfaces_RoundTripCommandsSettingsAndCloudActions()
     {
@@ -1269,9 +1131,9 @@ public sealed class SettingsIpcFacadeTests : IDisposable
             Assert.Equal("snap-1.zip", loop.BackupRestore.DeletedSnapshotName);
             Assert.Equal("C:\\dl\\snap.zip", await cloud.DownloadSnapshotAsync(endpoint, "snap-1.zip", "C:\\dl"));
             Assert.Equal(("webdav", "snap-1.zip", "C:\\dl"), loop.BackupRestore.DownloadTarget);
-            DeskBoxRestorePreparation preparation = await cloud.PrepareScopedRestoreAsync("C:\\dl\\snap.zip", CloudBackupDomain.TodoData);
+            DeskBoxRestorePreparation preparation = await cloud.PrepareScopedRestoreAsync("C:\\dl\\snap.zip", CloudBackupDomain.WidgetStyle);
             Assert.Equal("1.6.0", preparation.AppVersion);
-            Assert.Equal(("C:\\dl\\snap.zip", CloudBackupDomain.TodoData), loop.BackupRestore.ScopedRestore);
+            Assert.Equal(("C:\\dl\\snap.zip", CloudBackupDomain.WidgetStyle), loop.BackupRestore.ScopedRestore);
             await cloud.CancelPendingRestoreAsync();
             Assert.True(loop.BackupRestore.Cancelled);
             Assert.True(await cloud.SetPendingRestoreItemReplaceModeAsync(true));
@@ -1281,54 +1143,6 @@ public sealed class SettingsIpcFacadeTests : IDisposable
             cloud.DeleteTemporaryDownload("C:\\dl");
             await UntilAsync(() => loop.BackupRestore.DeletedTempDownload == "C:\\dl");
             Assert.Equal("C:\\dl", loop.BackupRestore.DeletedTempDownload);
-        }
-        finally
-        {
-            await loop.Client.DisposeAsync();
-            await loop.Server.DisposeAsync();
-        }
-    }
-
-    [Fact]
-    public async Task UpdateService_RoundTripsStateCheckDownloadAndEvents()
-    {
-        var settings = new SettingsService(_tempRoot);
-        var loop = await StartLoopbackAsync(PipeName(), settings);
-        try
-        {
-            var remote = new RemoteAppUpdateService(loop.Client);
-
-            var checkCompleted = new TaskCompletionSource<DeskBox.Models.AppUpdateCheckResult>(
-                TaskCreationOptions.RunContinuationsAsynchronously);
-            remote.CheckCompleted += result => checkCompleted.TrySetResult(result);
-
-            Assert.NotNull(remote.LastCheckResult);
-            Assert.Equal(new DateTime(2026, 10, 23, 12, 0, 0, DateTimeKind.Utc), remote.LastCheckTimeUtc);
-            Assert.Equal("https://update/next", remote.ManifestUrl);
-            Assert.Equal(AppUpdateDeliveryKind.DirectInstaller, remote.DeliveryKind);
-            Assert.Equal("C:\\downloads\\setup.exe", remote.LastDownloadedInstallerPath);
-            Assert.False(remote.IsDownloadInProgress);
-
-            DeskBox.Models.AppUpdateCheckResult check = await remote.CheckForUpdatesAsync("1.5.9");
-            Assert.Equal("1.5.9", check.CurrentVersion);
-            Assert.Equal("1.5.9", loop.UpdateService.CheckVersionArg);
-
-            DeskBox.Models.AppUpdateDownloadResult download =
-                await remote.DownloadUpdateAsync(new DeskBox.Models.AppUpdateManifest());
-            Assert.NotNull(download);
-            Assert.NotNull(loop.UpdateService.DownloadManifestArg);
-
-            AppUpdateInstallResult install = remote.StartInstallerHelper("C:\\downloads\\setup.exe");
-            Assert.Equal("C:\\downloads\\setup.exe", loop.UpdateService.InstallerPathArg);
-
-            // Event push reaches the remote subscriber.
-            await loop.Server.SendEventAsync(
-                SettingsIpcMethods.UpdateCheckCompleted,
-                SettingsIpcPayload.Encode(
-                    loop.UpdateService.CheckResult,
-                    SettingsIpcJsonContext.Default.AppUpdateCheckResult));
-            DeskBox.Models.AppUpdateCheckResult pushed = await checkCompleted.Task.WaitAsync(TimeSpan.FromSeconds(5));
-            Assert.Equal("1.5.9", pushed.CurrentVersion);
         }
         finally
         {

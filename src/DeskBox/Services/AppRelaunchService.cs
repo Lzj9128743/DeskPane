@@ -27,26 +27,14 @@ public static class AppRelaunchService
 
         try
         {
-            string helperPath = AppUpdateService.PrepareDetachedUpdaterHelper(
-                AppContext.BaseDirectory,
-                DeskBoxDataPathService.Current.UpdatesDirectory);
-            if (!File.Exists(helperPath))
-            {
-                return AppRelaunchScheduleResult.Failed("DeskBox.Updater.exe was not found.");
-            }
-
             var startInfo = new ProcessStartInfo
             {
-                FileName = helperPath,
+                FileName = appPath,
                 UseShellExecute = false,
-                CreateNoWindow = true,
-                WorkingDirectory = Path.GetDirectoryName(helperPath) ?? AppContext.BaseDirectory
+                WorkingDirectory = Path.GetDirectoryName(appPath) ?? AppContext.BaseDirectory
             };
-            startInfo.ArgumentList.Add("--restart-only");
-            startInfo.ArgumentList.Add("--pid");
+            startInfo.ArgumentList.Add("--await-parent-exit");
             startInfo.ArgumentList.Add(Environment.ProcessId.ToString(CultureInfo.InvariantCulture));
-            startInfo.ArgumentList.Add("--app");
-            startInfo.ArgumentList.Add(appPath);
             Process.Start(startInfo);
             return AppRelaunchScheduleResult.StartedSuccessfully;
         }

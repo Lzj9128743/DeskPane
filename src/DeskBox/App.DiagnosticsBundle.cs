@@ -16,7 +16,6 @@ public partial class App
     public DeskBoxDiagnosticSnapshot CreateDiagnosticSnapshot()
     {
         AppRuntimeHealthSnapshot? runtimeHealth = DiagnosticsService?.GetRuntimeHealthSnapshot(
-            EverythingSearchService,
             WidgetManager?.GetFolderWatcherHealthSnapshots());
         DeskBoxWidgetManagerDiagnostic widgetManager =
             WidgetManager?.CreateDiagnosticsSnapshot() ?? DeskBoxWidgetManagerDiagnostic.Empty;
@@ -26,10 +25,6 @@ public partial class App
             GlobalHotkeyService.NormalizeGesture(
                 SettingsService.Settings.GlobalHotkeyModifiers,
                 SettingsService.Settings.GlobalHotkeyKey);
-        GlobalHotkeyGesture searchGesture = SearchHotkeyService?.CurrentGesture ??
-            GlobalHotkeyService.NormalizeGesture(
-                SettingsService.Settings.SearchHotkeyModifiers,
-                SettingsService.Settings.SearchHotkeyKey);
         ShortcutNativeDiagnosticState shortcutNative =
             ShortcutNativeBackend.CaptureDiagnosticState();
         var startupLedger = new DeskBoxStartupLedgerDiagnostic(
@@ -74,10 +69,10 @@ public partial class App
                 GlobalHotkeyService?.ReservedHookPostFailureCount ?? 0,
                 GlobalHotkeyService?.ReservedHookInputFailureCount ?? 0,
                 !string.IsNullOrWhiteSpace(GlobalHotkeyService?.LastError),
-                SettingsService.Settings.SearchHotkeyEnabled,
-                SearchHotkeyService?.IsRegistered == true,
-                (int)searchGesture.Modifiers,
-                searchGesture.VirtualKey),
+                false,
+                false,
+                0,
+                0),
             Settings: new DeskBoxSettingsDiagnostic(
                 SettingsService.LastLoadRecoveryState,
                 SettingsService.HasPendingSave,

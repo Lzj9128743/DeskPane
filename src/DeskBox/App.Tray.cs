@@ -32,17 +32,26 @@ public partial class App
     private bool IsTrayIconHiddenByUserSetting() =>
         SettingsService.Settings.Core.TrayIconStyle == TrayIconStyleHidden;
 
+    private const double TrayMenuItemFontSize = 13;
+    private static readonly Thickness TrayMenuItemPadding = new(12, 6, 16, 6);
+
+    private static MenuFlyoutItem CreateStyledTrayMenuItem(string text, IconElement icon) => new()
+    {
+        Text = text,
+        MinWidth = TrayMenuItemWidth,
+        FontSize = TrayMenuItemFontSize,
+        Padding = TrayMenuItemPadding,
+        Icon = icon
+    };
+
     private void CreateTrayIcon()
     {
         var localization = LocalizationService;
         var contextMenu = new MenuFlyout();
         contextMenu.ShouldConstrainToRootBounds = false;
-        var organizeDesktopItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Tray.OrganizeDesktop"),
-            Width = TrayMenuItemWidth,
-            Icon = new FontIcon { Glyph = "\uE74C" }
-        };
+        var organizeDesktopItem = CreateStyledTrayMenuItem(
+            localization.T("Tray.OrganizeDesktop"),
+            new FontIcon { Glyph = "\uE74C" });
         organizeDesktopItem.Loaded += OnTrayMenuVisualLoaded;
         AttachTrayMenuItemInteraction(
             organizeDesktopItem,
@@ -50,71 +59,84 @@ public partial class App
                 contextMenu,
                 OpenDesktopOrganizationFromTray));
 
-        var mapFolderItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Common.NewFolderMapping"),
-            Width = TrayMenuItemWidth,
-            Icon = new SymbolIcon(Symbol.OpenFile)
-        };
+        var toggleNativeDesktopIconsItem = CreateStyledTrayMenuItem(
+            string.Empty,
+            new FontIcon { Glyph = "\uE890" });
+        AttachTrayMenuItemInteraction(
+            toggleNativeDesktopIconsItem,
+            () => RunTrayMenuActionAsync(contextMenu, () =>
+            {
+                DesktopIconVisibilityService.ToggleDesktopIcons();
+                RefreshTrayMenuText();
+                return Task.CompletedTask;
+            }));
+
+        var mapFolderItem = CreateStyledTrayMenuItem(
+            localization.T("Common.NewFolderMapping"),
+            new SymbolIcon(Symbol.OpenFile));
         AttachTrayMenuItemInteraction(
             mapFolderItem,
             () => RunTrayMenuActionAsync(contextMenu, CreateFolderWidgetFromPickerAsync));
 
-        var addFeatureWidgetItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Common.AddFeatureWidget"),
-            Width = TrayMenuItemWidth,
-            Icon = new FontIcon { Glyph = "\uE710" }
-        };
+        var toggleThemeItem = CreateStyledTrayMenuItem(
+            string.Empty,
+            new FontIcon { Glyph = "\uE793" });
         AttachTrayMenuItemInteraction(
-            addFeatureWidgetItem,
-            () => RunTraySettingsActionAsync(
-                contextMenu,
-                OpenFeatureWidgetsFromTray));
+            toggleThemeItem,
+            () => RunTrayMenuActionAsync(contextMenu, () =>
+            {
+                ToggleTheme();
+                RefreshTrayMenuText();
+                return Task.CompletedTask;
+            }));
 
-        var settingsItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Tray.Settings"),
-            Width = TrayMenuItemWidth,
-            Icon = new SymbolIcon(Symbol.Setting)
-        };
+        var toggleLanguageItem = CreateStyledTrayMenuItem(
+            string.Empty,
+            new FontIcon { Glyph = "\uF2B7" });
         AttachTrayMenuItemInteraction(
-            settingsItem,
-            () => RunTraySettingsActionAsync(contextMenu, OpenSettingsFromTray));
+            toggleLanguageItem,
+            () => RunTrayMenuActionAsync(contextMenu, () =>
+            {
+                LocalizationService.SetLanguage(
+                    LocalizationService.IsChinese
+                        ? LocalizationService.LanguageEnglish
+                        : LocalizationService.LanguageChinese);
+                return Task.CompletedTask;
+            }));
 
-        var openManagedStorageItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Tray.OpenManagedStorage"),
-            Width = TrayMenuItemWidth,
-            Icon = new SymbolIcon(Symbol.Folder)
-        };
+        var autoStartItem = CreateStyledTrayMenuItem(
+            string.Empty,
+            new FontIcon { Glyph = "\uE739" });
         AttachTrayMenuItemInteraction(
-            openManagedStorageItem,
-            () => RunTrayMenuActionAsync(contextMenu, OpenManagedStorageFromTray));
+            autoStartItem,
+            () => RunTrayMenuActionAsync(contextMenu, () =>
+            {
+                bool enable = !StartupService.Current.IsEnabled();
+                if (enable)
+                {
+                    StartupService.Current.Enable();
+                }
+                else
+                {
+                    StartupService.Current.Disable();
+                }
 
-        var updateItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Tray.UpdateAvailable"),
-            Width = TrayMenuItemWidth,
-            Icon = new SymbolIcon(Symbol.Download),
-            Visibility = Visibility.Collapsed
-        };
-        AttachTrayMenuItemInteraction(
-            updateItem,
-            () => RunTraySettingsActionAsync(contextMenu, OpenAboutSettingsFromTray));
+                SettingsService.Settings.AutoStart = StartupService.Current.IsEnabled();
+                SettingsService.SaveDebounced();
+                RefreshTrayMenuText();
+                return Task.CompletedTask;
+            }));
 
-        var exitItem = new MenuFlyoutItem
-        {
-            Text = localization.T("Tray.Exit"),
-            Width = TrayMenuItemWidth,
-            Icon = new SymbolIcon(Symbol.Cancel)
-        };
+        var exitItem = CreateStyledTrayMenuItem(
+            localization.T("Tray.Exit"),
+            new SymbolIcon(Symbol.Cancel));
         AttachTrayMenuItemInteraction(
             exitItem,
             () => RunTrayMenuActionAsync(contextMenu, ExitApplication));
 
         _trayCreateWidgetItems.Clear();
         contextMenu.Items.Add(organizeDesktopItem);
+        contextMenu.Items.Add(toggleNativeDesktopIconsItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
         foreach (var descriptor in new WidgetContentFactory(LocalizationService).GetCreateEntryDescriptors())
         {
@@ -124,23 +146,30 @@ public partial class App
         }
 
         contextMenu.Items.Add(mapFolderItem);
-        contextMenu.Items.Add(addFeatureWidgetItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
-        contextMenu.Items.Add(openManagedStorageItem);
-        contextMenu.Items.Add(new MenuFlyoutSeparator());
-        contextMenu.Items.Add(updateItem);
-        contextMenu.Items.Add(settingsItem);
+        contextMenu.Items.Add(toggleThemeItem);
+        var opacityMenu = WidgetOpacityMenuBuilder.Create(
+            localization,
+            SettingsService,
+            TrayMenuItemFontSize,
+            TrayMenuItemPadding,
+            TrayMenuItemWidth);
+        contextMenu.Items.Add(opacityMenu);
+        contextMenu.Items.Add(toggleLanguageItem);
+        contextMenu.Items.Add(autoStartItem);
         contextMenu.Items.Add(new MenuFlyoutSeparator());
         contextMenu.Items.Add(exitItem);
 
         _trayOrganizeDesktopItem = organizeDesktopItem;
+        _trayToggleDesktopIconsItem = toggleNativeDesktopIconsItem;
         _trayMapFolderItem = mapFolderItem;
-        _trayAddFeatureWidgetItem = addFeatureWidgetItem;
-        _trayOpenManagedStorageItem = openManagedStorageItem;
-        _trayUpdateItem = updateItem;
-        _traySettingsItem = settingsItem;
+        _trayToggleThemeItem = toggleThemeItem;
+        _trayOpacityMenu = opacityMenu;
+        _trayToggleLanguageItem = toggleLanguageItem;
+        _trayAutoStartItem = autoStartItem;
         _trayExitItem = exitItem;
         _trayContextMenu = contextMenu;
+        RefreshTrayMenuText();
         PrepareTrayContextMenu(contextMenu);
 
         _trayWindow = new Window { Title = "DeskBox Tray Host" };
@@ -158,8 +187,10 @@ public partial class App
             Log($"[Tray] Tray window resize not applied: {ex.Message}");
         }
 
+        Guid trayIconId = CreatePerExecutableTrayIconGuid();
         _trayIcon = new TaskbarIcon
         {
+            Id = trayIconId,
             Icon = AppBranding.CreateTrayIcon(SettingsService.Settings.TrayIconStyle ?? "System", IsDarkThemeActive()),
             ToolTipText = localization.T("Tray.Tooltip"),
             ContextMenuMode = ContextMenuMode.SecondWindow,
@@ -310,6 +341,13 @@ public partial class App
     /// three attempts (~6 s). Do not tighten this constant to shrink that
     /// loop; it would silently cut the icon-creation window instead
     /// (drag-freeze review, 2026-10-14).</summary>
+    private static Guid CreatePerExecutableTrayIconGuid()
+    {
+        string seed = "DeskBox.TrayIcon:" + (Environment.ProcessPath ?? AppContext.BaseDirectory).ToUpperInvariant();
+        byte[] hash = System.Security.Cryptography.SHA256.HashData(System.Text.Encoding.UTF8.GetBytes(seed));
+        return new Guid(hash.AsSpan(0, 16));
+    }
+
     private const int TrayCreationMaxAttempts = 15;
 
     private static readonly TimeSpan TrayCreationRetryDelay = TimeSpan.FromSeconds(2);
@@ -457,12 +495,9 @@ public partial class App
         WidgetContentDescriptor descriptor,
         LocalizationService localization)
     {
-        var item = new MenuFlyoutItem
-        {
-            Text = GetCreateEntryText(descriptor, localization),
-            Width = TrayMenuItemWidth,
-            Icon = new FontIcon { Glyph = descriptor.DefaultGlyph }
-        };
+        var item = CreateStyledTrayMenuItem(
+            GetCreateEntryText(descriptor, localization),
+            new FontIcon { Glyph = descriptor.DefaultGlyph });
         AttachTrayMenuItemInteraction(item, () => RunTrayMenuActionAsync(contextMenu, async () =>
         {
             if (WidgetManager is not null)
@@ -499,6 +534,8 @@ public partial class App
 
     private void PrepareTrayContextMenu(MenuFlyout contextMenu)
     {
+        RefreshTrayMenuText();
+
         bool canCreateWidget = WidgetManager is not null;
         if (_trayOrganizeDesktopItem is not null)
         {
@@ -1054,29 +1091,23 @@ public partial class App
 
         await WidgetManager.ToggleWidgetsFromTrayAsync(source);
         UpdateTrayLayerStateText(WidgetManager.WidgetsRaisedFromTray);
-        if (_onboardingWindow is not null)
-        {
-            OnboardingWidgetsVisibilityChanged?.Invoke(WidgetManager.HasVisibleWidgets);
-        }
     }
 
-    private async Task ToggleWidgetsFromDesktopDoubleClickAsync(
+    private Task ToggleWidgetsFromDesktopDoubleClickAsync(
         DesktopDoubleClickSequence sequence)
     {
-        if (WidgetManager is null)
-        {
-            return;
-        }
-
-        if (WidgetManager.ConsumeQuickRevealDesktopDoubleClickDismiss(sequence))
+        if (WidgetManager is not null &&
+            WidgetManager.ConsumeQuickRevealDesktopDoubleClickDismiss(sequence))
         {
             Log(
                 "[DesktopDoubleClick] Consumed matching quick-reveal outside dismissal");
-            return;
+            return Task.CompletedTask;
         }
 
-        Log("[DesktopDoubleClick] Matched blank desktop sequence action=toggle");
-        await ToggleTrayWidgetsAsync("desktop-double-click");
+        Log("[DesktopDoubleClick] Matched blank desktop sequence action=toggle-desktop-icons");
+        DesktopIconVisibilityService.ToggleDesktopIcons();
+        RefreshTrayMenuText();
+        return Task.CompletedTask;
     }
 
     private void UpdateTrayLayerStateText(bool raised)
@@ -1087,20 +1118,28 @@ public partial class App
 
     private void RefreshTrayMenuText()
     {
+        bool isChinese = LocalizationService.IsChinese;
+
         if (_trayOrganizeDesktopItem is not null)
         {
             _trayOrganizeDesktopItem.Text = LocalizationService.T(
                 "Tray.OrganizeDesktop");
         }
 
+        if (_trayToggleDesktopIconsItem is not null)
+        {
+            bool? iconsVisible = DesktopIconVisibilityService.AreDesktopIconsVisible();
+            _trayToggleDesktopIconsItem.Text = iconsVisible switch
+            {
+                true => isChinese ? "隐藏桌面图标" : "Hide Desktop Icons",
+                false => isChinese ? "显示桌面图标" : "Show Desktop Icons",
+                null => isChinese ? "切换桌面图标" : "Toggle Desktop Icons"
+            };
+        }
+
         if (_trayMapFolderItem is not null)
         {
             _trayMapFolderItem.Text = LocalizationService.T("Common.NewFolderMapping");
-        }
-
-        if (_trayAddFeatureWidgetItem is not null)
-        {
-            _trayAddFeatureWidgetItem.Text = LocalizationService.T("Common.AddFeatureWidget");
         }
 
         foreach (var (widgetKind, item) in _trayCreateWidgetItems)
@@ -1109,22 +1148,41 @@ public partial class App
             item.Text = GetCreateEntryText(descriptor, LocalizationService);
         }
 
-        if (_traySettingsItem is not null)
+        if (_trayToggleThemeItem is not null)
         {
-            _traySettingsItem.Text = LocalizationService.T("Tray.Settings");
+            bool isDark = IsDarkThemeActive();
+            _trayToggleThemeItem.Text = isDark
+                ? (isChinese ? "切换浅色主题" : "Switch to Light")
+                : (isChinese ? "切换深色主题" : "Switch to Dark");
         }
 
-        if (_trayUpdateItem is not null)
+        if (_trayOpacityMenu is not null)
         {
-            _trayUpdateItem.Text = string.IsNullOrWhiteSpace(_availableUpdateVersion)
-                ? LocalizationService.T("Tray.UpdateAvailable")
-                : LocalizationService.Format("Tray.UpdateAvailableWithVersion", _availableUpdateVersion);
-            _trayUpdateItem.Visibility = _hasUpdateAvailable ? Visibility.Visible : Visibility.Collapsed;
+            WidgetOpacityMenuBuilder.Refresh(
+                _trayOpacityMenu,
+                LocalizationService,
+                SettingsService,
+                TrayMenuItemFontSize,
+                TrayMenuItemPadding);
         }
 
-        if (_trayOpenManagedStorageItem is not null)
+        if (_trayToggleLanguageItem is not null)
         {
-            _trayOpenManagedStorageItem.Text = LocalizationService.T("Tray.OpenManagedStorage");
+            _trayToggleLanguageItem.Text = isChinese
+                ? "切换为 English"
+                : "Switch to 简体中文";
+        }
+
+        if (_trayAutoStartItem is not null)
+        {
+            bool autoStart = StartupService.Current.IsEnabled();
+            _trayAutoStartItem.Text = autoStart
+                ? (isChinese ? "开机自启：开" : "Auto-start: On")
+                : (isChinese ? "开机自启：关" : "Auto-start: Off");
+            _trayAutoStartItem.Icon = new FontIcon
+            {
+                Glyph = autoStart ? "\uE73E" : "\uE739"
+            };
         }
 
         if (_trayExitItem is not null)
@@ -1137,12 +1195,6 @@ public partial class App
     {
         if (_trayIcon is null)
         {
-            return;
-        }
-
-        if (_hasUpdateAvailable && !string.IsNullOrWhiteSpace(_availableUpdateVersion))
-        {
-            _trayIcon.ToolTipText = LocalizationService.Format("Tray.TooltipUpdateAvailable", _availableUpdateVersion);
             return;
         }
 
@@ -1411,23 +1463,18 @@ public partial class App
         IntPtr trayHwnd = _trayWindow is null
             ? IntPtr.Zero
             : WindowNative.GetWindowHandle(_trayWindow);
-        IntPtr settingsHwnd = _settingsWindow is null
-            ? IntPtr.Zero
-            : WindowNative.GetWindowHandle(_settingsWindow);
         IntPtr helperHwnd = _folderPickerHelperWindow is null
             ? IntPtr.Zero
             : WindowNative.GetWindowHandle(_folderPickerHelperWindow);
 
         PickerOwnerSource resolved = PickerOwnerResolutionPolicy.Resolve(
             IsUsablePickerOwner(trayHwnd),
-            IsUsablePickerOwner(settingsHwnd) &&
-                Win32Helper.IsWindowVisible(settingsHwnd),
+            false,
             IsUsablePickerOwner(helperHwnd));
         source = resolved;
         return resolved switch
         {
             PickerOwnerSource.TrayWindow => trayHwnd,
-            PickerOwnerSource.SettingsWindow => settingsHwnd,
             PickerOwnerSource.CachedHelperWindow => helperHwnd,
             _ => RecreateFolderPickerHelperWindow(),
         };
@@ -1493,11 +1540,6 @@ public partial class App
         OpenSettings();
     }
 
-    private void OpenFeatureWidgetsFromTray()
-    {
-        ShowSettings("FeatureWidgets");
-    }
-
     private void OpenDesktopOrganizationFromTray()
     {
         CancelBackgroundMemoryCleanup();
@@ -1507,8 +1549,6 @@ public partial class App
     private void OpenAboutSettingsFromTray()
     {
         CancelBackgroundMemoryCleanup();
-        // ShowSettings deep-links "About"; the host brings the update status
-        // into view when it applies the section navigation.
         ShowSettings("About");
     }
 

@@ -219,33 +219,6 @@ public sealed partial class WidgetManager
 
         if (config.WidgetKind != WidgetKind.File)
         {
-            if (IsContentFeatureWidgetKind(config.WidgetKind))
-            {
-                if (!GetFeatureWidgetEnabledState(config.WidgetKind))
-                {
-                    App.LogVerbose($"[TrayBatch] Prepare skipped reason=feature-disabled widget={FormatWidget(config)}");
-                    return null;
-                }
-
-                if (_contentWidgets.TryGetValue(config.Id, out var existingContent))
-                {
-                    App.LogVerbose($"[TrayBatch] Prepare useLoaded content widget={FormatWidget(config)} {FormatHostWindow(existingContent)}");
-                    existingContent.RestoreBoundsForCurrentTopology();
-                    if (!existingContent.Visible)
-                    {
-                        existingContent.PrepareTrayShowAnimation();
-                    }
-
-                    return existingContent;
-                }
-
-                App.LogVerbose($"[TrayBatch] Prepare createContent widget={FormatWidget(config)} raisedInit={showRaisedWhileInitializing}");
-                return await CreateRegisteredWidgetFromConfigAsync(
-                    config,
-                    keepPreparedForAnimation: true,
-                    showRaisedWhileInitializing: showRaisedWhileInitializing);
-            }
-
             App.LogVerbose($"[TrayBatch] Prepare skipped reason=unsupported-kind widget={FormatWidget(config)}");
             return null;
         }

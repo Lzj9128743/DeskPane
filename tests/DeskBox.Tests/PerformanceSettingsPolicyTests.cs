@@ -27,8 +27,6 @@ public sealed class PerformanceSettingsPolicyTests
             PerformanceSettingsPolicy.HiddenCacheCleanupScopeAllRecreatable,
             effective.HiddenCacheCleanupScope);
         Assert.True(effective.AllowTextMarqueeAnimations);
-        Assert.True(effective.AllowVinylRotationAnimations);
-        Assert.True(effective.AllowGlanceImageAutoRotation);
         Assert.True(effective.AllowCompactAmbientAnimations);
         Assert.False(PerformanceSettingsPolicy.Normalize(settings));
     }
@@ -67,8 +65,6 @@ public sealed class PerformanceSettingsPolicyTests
             PerformanceSettingsPolicy.HiddenCacheCleanupScopeAllRecreatable,
             effective.HiddenCacheCleanupScope);
         Assert.True(effective.AllowTextMarqueeAnimations);
-        Assert.False(effective.AllowVinylRotationAnimations);
-        Assert.True(effective.AllowGlanceImageAutoRotation);
         Assert.False(effective.AllowCompactAmbientAnimations);
         Assert.True(settings.EnableTextMarqueeAnimations);
         Assert.False(settings.EnableVinylRotationAnimations);
@@ -112,8 +108,6 @@ public sealed class PerformanceSettingsPolicyTests
             PerformanceSettingsPolicy.CacheBudgetBalanced,
             effective.CacheBudget);
         Assert.True(effective.AllowTextMarqueeAnimations);
-        Assert.True(effective.AllowVinylRotationAnimations);
-        Assert.True(effective.AllowGlanceImageAutoRotation);
         Assert.True(effective.AllowCompactAmbientAnimations);
     }
 
@@ -159,8 +153,6 @@ public sealed class PerformanceSettingsPolicyTests
             PerformanceSettingsPolicy.HiddenCacheCleanupScopeAllRecreatable,
             effective.HiddenCacheCleanupScope);
         Assert.False(effective.AllowTextMarqueeAnimations);
-        Assert.True(effective.AllowVinylRotationAnimations);
-        Assert.False(effective.AllowGlanceImageAutoRotation);
         Assert.True(effective.AllowCompactAmbientAnimations);
     }
 
@@ -302,8 +294,6 @@ public sealed class PerformanceSettingsPolicyTests
         Assert.True(settings.EnableCompactAmbientAnimations);
         Assert.False(settings.EnableContinuousDecorativeAnimations);
         Assert.False(effective.AllowTextMarqueeAnimations);
-        Assert.True(effective.AllowVinylRotationAnimations);
-        Assert.False(effective.AllowGlanceImageAutoRotation);
         Assert.True(effective.AllowCompactAmbientAnimations);
     }
 

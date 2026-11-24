@@ -27,9 +27,8 @@ public sealed class LayoutWriteSyncTests : IDisposable
         authoritative.Settings.Widgets.Add(new Models.WidgetConfig
         {
             Id = "w-main",
-            WidgetKind = Models.WidgetKind.Music,
+            WidgetKind = Models.WidgetKind.File,
         });
-        authoritative.Settings.WidgetLayout.FeatureWidgetEnabledStates["Music"] = true;
         string slice = authoritative.SerializeCurrentLayout();
 
         int changed = 0;
@@ -39,7 +38,6 @@ public sealed class LayoutWriteSyncTests : IDisposable
 
         Assert.True(service.ApplyExternalLayout(slice));
         Assert.Contains(service.Settings.Widgets, w => w.Id == "w-main");
-        Assert.True(service.Settings.WidgetLayout.FeatureWidgetEnabledStates["Music"]);
         Assert.Equal(1, changed);
 
         // Garbage and empty refuse; nothing changes.
@@ -117,13 +115,12 @@ public sealed class LayoutWriteSyncTests : IDisposable
     {
         var main = new SettingsService(_tempRoot);
         main.LoadAsync().GetAwaiter().GetResult();
-        main.Settings.LastRunVersion = "adopt-roundtrip";
+        main.Settings.Language = "en-US";
         main.Settings.Widgets.Add(new Models.WidgetConfig
         {
             Id = "w-adopt",
-            WidgetKind = Models.WidgetKind.Glance,
+            WidgetKind = Models.WidgetKind.File,
         });
-        main.Settings.WidgetLayout.FeatureWidgetEnabledStates["Todo"] = true;
         string json = main.SerializeCurrentSettings();
 
         // Host boot shape: a fresh service that never disk-loads. Adoption
@@ -132,9 +129,8 @@ public sealed class LayoutWriteSyncTests : IDisposable
         // the layout domain riding inside the graph.
         var host = new SettingsService(_tempRoot);
         host.AdoptExternalSnapshot(json);
-        Assert.Equal("adopt-roundtrip", host.Settings.LastRunVersion);
+        Assert.Equal("en-US", host.Settings.Language);
         Assert.Contains(host.Settings.Widgets, w => w.Id == "w-adopt");
-        Assert.True(host.Settings.WidgetLayout.FeatureWidgetEnabledStates["Todo"]);
 
         // Malformed payloads throw so the host boot fails loudly instead of
         // running on a fabricated graph.

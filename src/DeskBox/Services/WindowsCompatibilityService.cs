@@ -139,21 +139,10 @@ public static class WindowsCompatibilityService
         string? requestedMaterialType,
         int osBuild)
     {
-        string normalized = requestedMaterialType is
-            SettingsService.WidgetMaterialTypeMica or
-            SettingsService.WidgetMaterialTypeMicaAlt or
-            SettingsService.WidgetMaterialTypeAcrylic or
-            SettingsService.WidgetMaterialTypeAcrylicBase or
-            SettingsService.WidgetMaterialTypeSolid
-                ? requestedMaterialType
-                : SettingsService.WidgetMaterialTypeAcrylic;
-
-        if (osBuild < Windows11Build && SettingsService.IsMicaMaterial(normalized))
-        {
-            return SettingsService.WidgetMaterialTypeAcrylic;
-        }
-
-        return normalized;
+        _ = osBuild;
+        return requestedMaterialType == SettingsService.WidgetMaterialTypeSolid
+            ? SettingsService.WidgetMaterialTypeSolid
+            : SettingsService.WidgetMaterialTypeAcrylic;
     }
 
     /// <summary>

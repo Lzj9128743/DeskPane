@@ -41,12 +41,8 @@ public sealed class WidgetCompactBoundsCalculatorTests
 
     [Theory]
     [InlineData(SettingsService.WidgetCompactContentModeSmart, WidgetKind.File, 52)]
-    [InlineData(SettingsService.WidgetCompactContentModeSmart, WidgetKind.Todo, 52)]
-    [InlineData(SettingsService.WidgetCompactContentModeSmart, WidgetKind.Music, 52)]
-    [InlineData(SettingsService.WidgetCompactContentModeSmart, WidgetKind.Weather, 52)]
-    [InlineData(SettingsService.WidgetCompactContentModeSmart, WidgetKind.QuickCapture, 52)]
-    [InlineData(SettingsService.WidgetCompactContentModeSummary, WidgetKind.Music, 42)]
-    [InlineData(SettingsService.WidgetCompactContentModeMinimal, WidgetKind.QuickCapture, 42)]
+    [InlineData(SettingsService.WidgetCompactContentModeSummary, WidgetKind.File, 42)]
+    [InlineData(SettingsService.WidgetCompactContentModeMinimal, WidgetKind.File, 42)]
     public void Calculate_UsesContentAppropriateHeight(string contentMode, WidgetKind kind, int expectedHeight)
     {
         RectInt32 result = WidgetCompactBoundsCalculator.Calculate(
@@ -67,26 +63,23 @@ public sealed class WidgetCompactBoundsCalculatorTests
             WidgetPositionAnchors.LeftTop,
             1,
             SettingsService.WidgetCompactContentModeSummary,
-            WidgetKind.Todo,
+            WidgetKind.File,
             heightContentMode: SettingsService.WidgetCompactContentModeSmart);
 
         Assert.Equal((int)WidgetCompactBoundsCalculator.SmartDetailHeight, result.Height);
     }
 
-    [Theory]
-    [InlineData(WidgetKind.File, 272)]
-    [InlineData(WidgetKind.Todo, 272)]
-    [InlineData(WidgetKind.Music, 320)]
-    public void Calculate_SmartStyleUsesWidgetAppropriateWidth(WidgetKind kind, int expectedWidth)
+    [Fact]
+    public void Calculate_SmartStyleUsesWidgetAppropriateWidth()
     {
         var result = WidgetCompactBoundsCalculator.Calculate(
             new RectInt32(0, 0, 600, 400),
             WidgetPositionAnchors.LeftTop,
             1,
             SettingsService.WidgetCompactContentModeSmart,
-            kind);
+            WidgetKind.File);
 
-        Assert.Equal(expectedWidth, result.Width);
+        Assert.Equal(272, result.Width);
     }
 
     [Theory]
@@ -100,7 +93,7 @@ public sealed class WidgetCompactBoundsCalculatorTests
             WidgetPositionAnchors.LeftTop,
             1,
             SettingsService.WidgetCompactContentModeMinimal,
-            WidgetKind.Music,
+            WidgetKind.File,
             customWidth);
 
         Assert.Equal(expectedWidth, result.Width);

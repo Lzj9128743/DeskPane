@@ -252,6 +252,11 @@ public sealed class DesktopOrganizationCoordinator
                 await _widgetManager.RefreshFileWidgetAsync(target.TargetWidgetId);
             }
 
+            if (result.CompletedItems.Count > 0)
+            {
+                DesktopIconVisibilityService.SetDesktopIconsVisible(false);
+            }
+
             return result;
         }
         catch (Exception ex)

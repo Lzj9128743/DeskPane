@@ -143,16 +143,9 @@ public sealed class RestoreMachineLocalPathRebaseTests
             FollowsDefaultStoragePath = false,
             MappedFolderPath = @"C:\Users\alice\Documents\Projects",
         };
-        var todoWidget = new WidgetConfig
-        {
-            Id = "todo",
-            WidgetKind = WidgetKind.Todo,
-            FollowsDefaultStoragePath = true,
-            MappedFolderPath = @"C:\Users\alice\DeskBox\Todo",
-        };
         var settings = new AppSettings();
         settings.WidgetLayout.Widgets.AddRange(
-            [followsDefault, followsDefaultElsewhere, customUnderSourceProfile, todoWidget]);
+            [followsDefault, followsDefaultElsewhere, customUnderSourceProfile]);
 
         RestorePathRebaseResult result = RestoreMachineLocalPathRebase.Rebase(
             settings,
@@ -165,7 +158,6 @@ public sealed class RestoreMachineLocalPathRebaseTests
         // Custom folders are the user's own locations: rebasing them would
         // manufacture plausible-looking empty folders on this machine.
         Assert.Equal(@"C:\Users\alice\Documents\Projects", customUnderSourceProfile.MappedFolderPath);
-        Assert.Equal(@"C:\Users\alice\DeskBox\Todo", todoWidget.MappedFolderPath);
     }
 
     [Fact]

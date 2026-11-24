@@ -22,6 +22,4 @@ public interface ISettingsRestoreActions
     Task<IReadOnlyList<DeskBoxBackupSnapshotInfo>> GetSnapshotInventoryAsync();
 
     Task DeleteSnapshotAsync(string snapshotPath);
-
-    Task<DeskBoxAttachmentHealthReport> ScanAttachmentHealthAsync();
 }

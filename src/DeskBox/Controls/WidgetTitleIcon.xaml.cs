@@ -340,26 +340,12 @@ public sealed partial class WidgetTitleIcon : UserControl
             {
                 WidgetTitleIconKind.ManagedStorage => "FilledManagedStoragePath",
                 WidgetTitleIconKind.MappedFolder => "FilledMappedFolderPath",
-                WidgetTitleIconKind.QuickCapture => "FilledQuickCapturePath",
-                WidgetTitleIconKind.Todo => "FilledTodoPath",
-                WidgetTitleIconKind.Music => "FilledMusicPath",
-                WidgetTitleIconKind.Weather => "FilledWeatherPath",
-                WidgetTitleIconKind.Tags => "FilledTagsPath",
-                WidgetTitleIconKind.Search => "FilledSearchPath",
-                WidgetTitleIconKind.SystemMonitor => "FilledSystemMonitorPath",
                 _ => "FilledDefaultPath"
             }
             : kind switch
             {
                 WidgetTitleIconKind.ManagedStorage => "LineManagedStoragePath",
                 WidgetTitleIconKind.MappedFolder => "LineMappedFolderPath",
-                WidgetTitleIconKind.QuickCapture => "LineQuickCapturePath",
-                WidgetTitleIconKind.Todo => "LineTodoPath",
-                WidgetTitleIconKind.Music => "LineMusicPath",
-                WidgetTitleIconKind.Weather => "LineWeatherPath",
-                WidgetTitleIconKind.Tags => "LineTagsPath",
-                WidgetTitleIconKind.Search => "LineSearchPath",
-                WidgetTitleIconKind.SystemMonitor => "LineSystemMonitorPath",
                 _ => "LineDefaultPath"
             };
 
@@ -385,11 +371,7 @@ public sealed partial class WidgetTitleIcon : UserControl
     private static bool IsFluentFilledPathKind(WidgetTitleIconKind kind)
     {
         return kind is WidgetTitleIconKind.ManagedStorage
-            or WidgetTitleIconKind.MappedFolder
-            or WidgetTitleIconKind.QuickCapture
-            or WidgetTitleIconKind.Todo
-            or WidgetTitleIconKind.Music
-            or WidgetTitleIconKind.Search;
+            or WidgetTitleIconKind.MappedFolder;
     }
 
     private void ApplyLegacyGlyphFallback()

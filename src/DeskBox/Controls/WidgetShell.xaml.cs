@@ -2546,9 +2546,7 @@ public sealed partial class WidgetShell : UserControl
         CompactPrimaryActionIcon.Glyph = presentation.PrimaryActionGlyph;
         CompactPreviousButton.IsEnabled = presentation.CanGoPrevious;
         CompactNextButton.IsEnabled = presentation.CanGoNext;
-        CompactPlayPauseIcon.Kind = presentation.IsPlaying
-            ? MusicTransportIconKind.Pause
-            : MusicTransportIconKind.Play;
+        CompactPlayPauseIcon.Glyph = presentation.IsPlaying ? "\uE769" : "\uE768";
         ApplyCompactActionLabels(presentation.IsPlaying);
         UpdateCompactVinylRotation(showVinyl && presentation.IsPlaying);
         ApplyCompactForegroundTheme(presentation);
@@ -4758,13 +4756,7 @@ public sealed partial class WidgetShell : UserControl
                 .AllowTextMarqueeAnimations;
     }
 
-    private static bool VinylRotationAnimationsEnabled()
-    {
-        return Application.Current is not App app ||
-            app.SettingsService is null ||
-            PerformanceSettingsPolicy.Resolve(app.SettingsService.Settings)
-                .AllowVinylRotationAnimations;
-    }
+    private static bool VinylRotationAnimationsEnabled() => false;
 
     private static bool CompactAmbientAnimationsEnabled()
     {

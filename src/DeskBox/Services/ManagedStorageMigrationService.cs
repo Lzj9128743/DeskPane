@@ -577,7 +577,7 @@ internal sealed class ManagedStorageMigrationService(string journalDirectory)
             throw new StorageMigrationException(StorageMigrationProblem.VolumeUnavailable, "The destination is unavailable.");
         if (free < bytes || free - bytes < reserve)
             throw new StorageMigrationException(StorageMigrationProblem.DiskFull,
-                $"The destination lacks space for {FileMetaService.FormatSize(bytes)} plus verification workspace.");
+                $"The destination lacks space for {DeskBox.Helpers.ByteSizeFormatter.FormatSize(bytes)} plus verification workspace.");
     }
 
     private static long? GetAvailableSpace(string path)

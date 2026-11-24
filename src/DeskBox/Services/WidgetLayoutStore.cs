@@ -279,11 +279,6 @@ public sealed class WidgetLayoutStore
     private static bool NormalizeStructure(WidgetLayoutSettingsSlice layout)
     {
         bool changed = false;
-        if (layout.FeatureWidgetEnabledStates is null)
-        {
-            layout.FeatureWidgetEnabledStates = [];
-            changed = true;
-        }
         if (layout.Widgets is null)
         {
             layout.Widgets = [];

@@ -379,8 +379,6 @@ public sealed partial class DesktopOrganizationTaskView
     private void ChangePathButton_Click(object sender, RoutedEventArgs e)
     {
         LocationsFlyout.Hide();
-        if (_isExecuting || _isScanning) return;
-        App.Current.ShowSettings("FileStorageSettings");
     }
 
     private async void RefreshButton_Click(object sender, RoutedEventArgs e)

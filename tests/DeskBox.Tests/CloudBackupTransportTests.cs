@@ -194,7 +194,7 @@ public sealed class CloudBackupTransportTests : IDisposable
         SeedTodoData();
         var transport = new FakeCloudBackupTransport();
         (CloudBackupService service, SettingsService settings) = CreateService(transport);
-        service.UpdateOptions(ConfiguredOptions(scope: CloudBackupDomain.TodoData));
+        service.UpdateOptions(ConfiguredOptions(scope: CloudBackupDomain.WidgetStyle));
 
         CloudBackupRunResult result = await service.RunBackupNowAsync();
 
@@ -743,7 +743,7 @@ public sealed class CloudBackupTransportTests : IDisposable
         // otherwise the new domain can sit unbacked-up for a full interval.
         service.UpdateOptions(ConfiguredOptions(
             lastSuccess: success,
-            scope: CloudBackupDomain.TodoData | CloudBackupDomain.QuickCaptureData));
+            scope: CloudBackupDomain.WidgetStyle));
 
         Assert.Equal(DateTimeOffset.MinValue, service.Options.LastSuccessUtc);
     }
@@ -775,7 +775,7 @@ public sealed class CloudBackupTransportTests : IDisposable
         // destination identity changed twice — the original success must
         // not survive the detour.
         service.UpdateOptions(ConfiguredOptions(lastSuccess: success, scope: CloudBackupDomain.None));
-        service.UpdateOptions(ConfiguredOptions(lastSuccess: success, scope: CloudBackupDomain.QuickCaptureData));
+        service.UpdateOptions(ConfiguredOptions(lastSuccess: success, scope: CloudBackupDomain.WidgetStyle));
 
         Assert.Equal(DateTimeOffset.MinValue, service.Options.LastSuccessUtc);
         Assert.Equal(0, settings.Settings.CloudBackup.CloudBackupLastSuccessUtcTicks);
@@ -1092,7 +1092,7 @@ public sealed class CloudBackupTransportTests : IDisposable
         });
         var backup = new DeskBoxDataBackupService(_appDataRoot);
         string archivePath = await backup.ExportScopedBackupAsync(
-            Path.Combine(_tempRoot, "restore-export"), CloudBackupDomain.TodoData);
+            Path.Combine(_tempRoot, "restore-export"), CloudBackupDomain.WidgetStyle);
         (CloudBackupService cloud, SettingsService settings) =
             CreateService(new FakeCloudBackupTransport());
         var actions = new BackupRestoreActions(settings, cloud, backup,
@@ -1101,7 +1101,7 @@ public sealed class CloudBackupTransportTests : IDisposable
                 ? AppRelaunchScheduleResult.StartedSuccessfully
                 : AppRelaunchScheduleResult.Failed("simulated restart failure"));
 
-        await actions.PrepareScopedRestoreAsync(archivePath, CloudBackupDomain.TodoData);
+        await actions.PrepareScopedRestoreAsync(archivePath, CloudBackupDomain.WidgetStyle);
         Assert.True(File.Exists(backup.PendingRestoreMarkerPath));
         if (relaunchScheduled) Assert.True(actions.ScheduleRelaunch().Started);
         await actions.StopAsync();
@@ -1189,8 +1189,8 @@ public sealed class CloudBackupTransportTests : IDisposable
         {
             CloudBackupProvider = "webdav",
             CloudBackupServerUrl = "https://dav.example.com/dav/",
-            CloudBackupTodoDataEnabled = true,
-            CloudBackupQuickCaptureDataEnabled = false,
+            CloudBackupWidgetStyleEnabled = true,
+            
             CloudBackupWidgetStyleEnabled = true
         };
 
@@ -1198,7 +1198,7 @@ public sealed class CloudBackupTransportTests : IDisposable
 
         Assert.True(options.IsConfigured);
         Assert.Equal(
-            CloudBackupDomain.TodoData | CloudBackupDomain.WidgetStyle,
+            CloudBackupDomain.WidgetStyle,
             options.Scope);
         Assert.Equal(5, options.RetentionCount);
         Assert.Equal("DeskBox/backups", options.RemotePath);
@@ -1283,7 +1283,7 @@ public sealed class CloudBackupTransportTests : IDisposable
     private static CloudBackupOptions ConfiguredOptions(
         string provider = "webdav",
         string username = "alice",
-        CloudBackupDomain scope = CloudBackupDomain.TodoData,
+        CloudBackupDomain scope = CloudBackupDomain.WidgetStyle,
         int retention = 5,
         int intervalMinutes = 24 * 60,
         DateTimeOffset? lastSuccess = null) =>

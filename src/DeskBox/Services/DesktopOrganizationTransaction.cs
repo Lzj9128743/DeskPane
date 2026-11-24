@@ -49,212 +49,110 @@ public sealed partial class DesktopOrganizationTransaction
             if (HasPendingRecovery)
                 throw new DesktopOrganizationPendingRecoveryException();
             ValidatePlan(plan);
-            ValidateAvailableSpace(plan);
 
             var settings = _settingsService.Settings;
             var historyEntries = _settingsService.OrganizationHistory.Entries;
             var originalWidgets = settings.Widgets.ToList();
             var originalRules = settings.DesktopOrganizationRules.ToList();
             var originalHistory = historyEntries.ToList();
-            var createdDirectories = new List<string>();
             var retainedItems = new List<DesktopOrganizationRetainedItem>();
             var createdWidgets = CreateCandidateWidgets(plan, settings);
-            var journal = BuildJournal(plan);
-            // Flips exactly once the durable commit lands and the journal is
-            // cleared; past that point the catch below must never roll the
-            // in-memory settings back — the physical moves are committed and
-            // no journal remains to reconcile them.
             bool committed = false;
 
             try
             {
+                string userDesktop = FileService.GetDesktopPaths().UserDesktop;
+                int totalCount = plan.Targets.Sum(target => target.Items.Count);
+                int completedCount = 0;
+                var completedItems = new List<OrganizationHistoryItem>(totalCount);
+                var historyTargets = new List<OrganizationHistoryTarget>(plan.Targets.Count);
+
                 foreach (DesktopOrganizationTargetPlan target in plan.Targets)
                 {
-                    try
+                    cancellationToken.ThrowIfCancellationRequested();
+                    WidgetConfig? widget = settings.Widgets.FirstOrDefault(candidate =>
+                        string.Equals(candidate.Id, target.TargetWidgetId, StringComparison.Ordinal));
+                    if (widget is null)
                     {
-                        if (!Directory.Exists(target.TargetDirectoryPath))
+                        continue;
+                    }
+
+                    widget.IsVirtualDesktopGroup = true;
+                    widget.FollowsDefaultStoragePath = false;
+                    widget.ManagedFolderName = null;
+                    widget.MappedFolderPath = userDesktop;
+                    if (string.IsNullOrWhiteSpace(widget.VirtualDesktopCategoryId) &&
+                        !string.IsNullOrWhiteSpace(target.CategoryId))
+                    {
+                        widget.VirtualDesktopCategoryId = target.CategoryId;
+                    }
+
+                    VirtualDesktopGroupPolicy.AssignPathsToVirtualGroup(
+                        widget,
+                        settings.Widgets,
+                        target.Items.Select(item => item.SourcePath));
+
+                    historyTargets.Add(new OrganizationHistoryTarget
+                    {
+                        WidgetId = widget.Id,
+                        WidgetName = widget.Name,
+                        DirectoryPath = userDesktop,
+                        WasCreated = target.CreatesWidget
+                    });
+
+                    foreach (DesktopOrganizationFileSnapshot item in target.Items)
+                    {
+                        completedItems.Add(new OrganizationHistoryItem
                         {
-                            Directory.CreateDirectory(target.TargetDirectoryPath);
-                            createdDirectories.Add(target.TargetDirectoryPath);
-                        }
+                            Name = Path.GetFileName(item.SourcePath),
+                            SourcePath = item.SourcePath,
+                            DestinationPath = item.SourcePath,
+                            TargetWidgetId = widget.Id,
+                            TargetWidgetName = widget.Name,
+                            SourceScope = item.SourceScope,
+                            Size = item.Size,
+                            LastWriteTimeUtc = item.LastWriteTimeUtc
+                        });
+                        completedCount++;
                     }
-                    catch (Exception ex) when (ex is not OperationCanceledException)
-                    {
-                        retainedItems.AddRange(target.Items.Select(item =>
-                            CreateRetainedItem(item, ex)));
-                        journal.Items.RemoveAll(item => string.Equals(
-                            item.TargetWidgetId,
-                            target.TargetWidgetId,
-                            StringComparison.Ordinal));
-                        App.Log(
-                            $"[DesktopOrganization] Target unavailable " +
-                            $"widget={target.TargetWidgetId} path={target.TargetDirectoryPath}: {ex}");
-                    }
+
+                    progress?.Report(new DesktopOrganizationProgress(
+                        completedCount,
+                        totalCount,
+                        widget.Id,
+                        widget.Name,
+                        target.Items.LastOrDefault()?.SourceScope ?? DesktopOrganizationSourceScope.Personal));
                 }
 
-                ReserveDestinations(journal);
-                if (journal.Items.Count > 0)
+                AddRulesForNewTargets(plan, settings.DesktopOrganizationRules);
+                var history = new OrganizationHistoryEntry
                 {
-                    await _recoveryStore.SaveAsync(journal);
-                }
-                int totalCount = journal.Items.Count;
-                int completedCount = 0;
-                var snapshotsByPath = plan.Targets
-                    .SelectMany(target => target.Items)
-                    .ToDictionary(
-                        item => item.SourcePath,
-                        StringComparer.OrdinalIgnoreCase);
-
-                void RecordCompleted(FileService.FileTransferResult result)
-                {
-                    // A cross-volume copy whose source cleanup failed is not a
-                    // completed move, even if the transfer retained a full copy.
-                    if (!FileService.IsCompletedShellMove(result.SourcePath, result.DestinationPath)) return;
-                    var item = journal.Items.First(candidate => string.Equals(
-                        candidate.SourcePath, result.SourcePath, StringComparison.OrdinalIgnoreCase));
-                    if (item.Completed) return;
-                    item.DestinationPath = result.DestinationPath;
-                    item.Completed = true;
-                    RecordDestinationIdentity(item);
-                    _recoveryStore.Save(journal);
-                }
-
-                // Personal files are processed first. One public Shell batch
-                // shares authorization and preserves each completed receipt.
-                var batches = journal.Items
-                    .Where(item => item.SourceScope == DesktopOrganizationSourceScope.Personal)
-                    .Select(item => new List<DesktopOrganizationRecoveryItem> { item }).ToList();
-                var publicItems = journal.Items.Where(item => item.SourceScope == DesktopOrganizationSourceScope.Public).ToList();
-                if (publicItems.Count > 0) batches.Add(publicItems);
-                foreach (var batch in batches)
-                {
-                    var ready = new List<DesktopOrganizationRecoveryItem>();
-                    foreach (var item in batch)
-                    {
-                        try
-                        {
-                            cancellationToken.ThrowIfCancellationRequested();
-                            RevalidateSource(snapshotsByPath[item.SourcePath]);
-                            ready.Add(item);
-                        }
-                        catch (Exception ex)
-                        {
-                            retainedItems.Add(CreateRetainedItem(snapshotsByPath[item.SourcePath], ex));
-                        }
-                    }
-                    Exception? failure = null;
-                    if (ready.Count > 0)
-                    {
-                        if (ready[0].SourceScope == DesktopOrganizationSourceScope.Public)
-                            progress?.Report(new DesktopOrganizationProgress(completedCount, totalCount,
-                                ready[0].TargetWidgetId, string.Empty, DesktopOrganizationSourceScope.Public));
-                        try
-                        {
-                            var results = await _transfer.MoveAsync(
-                                ready.Select(item => new FileService.FileTransferPlan(item.SourcePath, item.DestinationPath)).ToList(),
-                                ready[0].SourceScope == DesktopOrganizationSourceScope.Public,
-                                ownerWindowHandle, RecordCompleted, cancellationToken);
-                            foreach (var result in results) RecordCompleted(result);
-                        }
-                        catch (Exception ex)
-                        {
-                            if (ex is FileService.IFileTransferWithCompletedResults partial)
-                                foreach (var result in partial.CompletedResults) RecordCompleted(result);
-                            failure = ex;
-                        }
-                        foreach (var item in ready.Where(item => !item.Completed))
-                            retainedItems.Add(CreateRetainedItem(snapshotsByPath[item.SourcePath],
-                                failure ?? new IOException("The file was not moved.")));
-                    }
-                    completedCount += batch.Count;
-                    var last = batch[^1];
-                    progress?.Report(new DesktopOrganizationProgress(completedCount, totalCount,
-                        last.TargetWidgetId, plan.Targets.First(target => target.TargetWidgetId == last.TargetWidgetId).SuggestedDisplayName,
-                        last.SourceScope));
-                }
-
-                DesktopOrganizationPlan committedPlan = CreateCommittedPlan(
-                    plan,
-                    journal);
-                var committedTargetIds = committedPlan.Targets
-                    .Select(target => target.TargetWidgetId)
-                    .ToHashSet(StringComparer.Ordinal);
-                createdWidgets.RemoveAll(widget => !committedTargetIds.Contains(widget.Id));
-                settings.Widgets.RemoveAll(widget =>
-                    plan.Targets.Any(target =>
-                        target.CreatesWidget &&
-                        string.Equals(target.TargetWidgetId, widget.Id, StringComparison.Ordinal)) &&
-                    !committedTargetIds.Contains(widget.Id));
-
-                AddRulesForNewTargets(
-                    committedPlan,
-                    settings.DesktopOrganizationRules);
-                OrganizationHistoryEntry history = CreateHistory(
-                    committedPlan,
-                    journal);
+                    Id = plan.Id,
+                    ActionType = OrganizationActionType.DesktopOrganization,
+                    TransferMode = "Virtual",
+                    CanUndo = false,
+                    WidgetName = "Desktop organization",
+                    Targets = historyTargets,
+                    Items = completedItems,
+                    IsUndone = false
+                };
                 if (history.Items.Count > 0)
                 {
-                    var previous = historyEntries.FirstOrDefault(entry => entry.Id == history.Id);
-                    if (previous is not null)
-                    {
-                        OrganizationHistoryPolicy.MergeRetryHistory(history, previous);
-                        foreach (var target in previous.Targets)
-                        {
-                            history.Targets.RemoveAll(candidate => candidate.WidgetId == target.WidgetId);
-                            history.Targets.Add(target);
-                        }
-                        historyEntries.Remove(previous);
-                    }
                     historyEntries.Insert(0, history);
-                    // The entry cap is enforced by the retention policy in
-                    // the compaction below (single source), which also knows
-                    // about active undos and journal-protected entries.
                 }
 
-                if (history.Items.Count == 0)
-                    history = historyEntries.FirstOrDefault(entry => entry.Id == plan.Id) ?? history;
-
-                // The result page renders this run's completed receipts; the
-                // persisted entry may be compacted to a summary right after
-                // the journal is cleared below.
-                var completedItems = history.Items.ToList();
-
-                // Saving is the commit point: full receipts must be on disk
-                // while the recovery journal still exists. Compacting before
-                // this save would let a crash between save and journal clear
-                // make RecoverPendingAsync treat committed moves as pending
-                // and restore them back to the desktop. Settings land FIRST —
-                // widget/rule state is the dependent half; the history receipt
-                // drops LAST as the linearization point, so a durable receipt
-                // proves both halves committed. A crash with settings durable
-                // but no receipt leaves the journal effective: startup
-                // recovery restores the files and RemoveUncommittedWidgets
-                // reverts the settings half — a coherent rollback, never
-                // moved files orphaned without their widget. SaveChecked is
-                // load-bearing on both halves: a silent save failure would
-                // clear the journal with no durable commit anywhere.
                 if (!await _settingsService.SaveCheckedAsync(notifySubscribers: false) ||
                     !await _settingsService.OrganizationHistory.SaveCheckedAsync())
                 {
-                    throw new IOException(
-                        "Persisting the desktop organization commit failed; the recovery journal is kept for the next launch.");
+                    throw new IOException("Persisting the virtual desktop organization commit failed.");
                 }
 
-                _recoveryStore.Clear();
                 committed = true;
-
-                // Post-commit maintenance: compaction and directory cleanup
-                // are best effort. A failure here must surface to the caller
-                // but never rolls back — the transaction is durable and the
-                // journal is gone; at worst a larger settings file survives
-                // for the next compaction pass.
                 if (OrganizationHistoryPolicy.ApplyRetentionPolicy(historyEntries))
                 {
                     await _settingsService.OrganizationHistory.SaveCheckedAsync();
                     await _settingsService.SaveAsync(notifySubscribers: false);
                 }
-
-                RemoveEmptyCreatedDirectories(createdDirectories);
 
                 return new DesktopOrganizationExecutionResult
                 {
@@ -268,28 +166,12 @@ public sealed partial class DesktopOrganizationTransaction
             {
                 if (committed)
                 {
-                    // The durable commit (settings save + journal clear) is
-                    // done. Restoring the original in-memory graphs here
-                    // would desynchronize settings from the already-moved
-                    // files with no journal left to reconcile them.
                     throw;
                 }
 
                 settings.Widgets = originalWidgets;
                 settings.DesktopOrganizationRules = originalRules;
                 _settingsService.OrganizationHistory.Entries = originalHistory;
-                // Completed physical moves are never reversed here. The
-                // journal keeps every recorded receipt, so the next launch's
-                // RecoverPendingAsync — the same path that handles a crash —
-                // restores what still matches its snapshot. An immediate
-                // reverse move would relocate whatever happens to sit at the
-                // destination now, with no content verification at all.
-                RemoveEmptyCreatedDirectories(createdDirectories);
-                // Checked-and-ignored: a receipt save failure inside the
-                // rollback path must not replace the original exception. The
-                // history rewrite lands FIRST on purpose: it removes any
-                // durable receipt before the settings revert — a crash here
-                // must never leave commit evidence without matching settings.
                 await _settingsService.OrganizationHistory.SaveCheckedAsync();
                 await _settingsService.SaveAsync(notifySubscribers: false);
                 throw;
@@ -450,9 +332,9 @@ public sealed partial class DesktopOrganizationTransaction
         AppSettings settings)
     {
         var created = new List<WidgetConfig>();
+        string userDesktop = FileService.GetDesktopPaths().UserDesktop;
         foreach (DesktopOrganizationTargetPlan target in plan.Targets.Where(target => target.CreatesWidget))
         {
-            string managedFolderName = Path.GetRelativePath(plan.StorageRootPath, target.TargetDirectoryPath);
             var bounds = target.PlannedBounds;
             var config = new WidgetConfig
             {
@@ -460,9 +342,11 @@ public sealed partial class DesktopOrganizationTransaction
                 Name = target.SuggestedDisplayName,
                 IsDefaultTitle = false,
                 WidgetKind = WidgetKind.File,
-                MappedFolderPath = target.TargetDirectoryPath,
-                FollowsDefaultStoragePath = true,
-                ManagedFolderName = managedFolderName,
+                IsVirtualDesktopGroup = true,
+                VirtualDesktopCategoryId = target.CategoryId,
+                MappedFolderPath = userDesktop,
+                FollowsDefaultStoragePath = false,
+                ManagedFolderName = null,
                 BoundsCoordinateVersion = WidgetConfig.CurrentBoundsCoordinateVersion,
                 Width = settings.DefaultWidgetWidth,
                 Height = settings.DefaultWidgetHeight,

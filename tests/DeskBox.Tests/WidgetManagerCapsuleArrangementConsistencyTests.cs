@@ -8,8 +8,8 @@ namespace DeskBox.Tests;
 /// capsule bar members on the same slot with no later event to heal the
 /// overlap (diagnostics showed members #9/#11 fully coincident until the user
 /// dragged any capsule). The consistency check must (a) coalesce bursts into
-/// one forced bar pass, (b) only ever constrain bar members — free capsules
-/// are user placements — and (c) be wired behind each restore/reveal
+/// one forced bar pass, (b) only ever constrain bar members 鈥?free capsules
+/// are user placements 鈥?and (c) be wired behind each restore/reveal
 /// completion point.
 /// </summary>
 public sealed class WidgetManagerCapsuleArrangementConsistencyTests : IDisposable
@@ -29,9 +29,7 @@ public sealed class WidgetManagerCapsuleArrangementConsistencyTests : IDisposabl
             settingsService,
             fileService,
             TestOrganizerServices.Create(settingsService, fileService),
-            new ThemeService(settingsService),
-            new QuickCaptureService(
-                new QuickCaptureStore(Path.Combine(_root, "quick-capture"))),
+            new ThemeService(settingsService))),
             () => desktopPath,
             recycleManagedFolderDeletes: false);
         return new Harness(settingsService, manager);

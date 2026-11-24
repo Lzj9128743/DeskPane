@@ -28,16 +28,12 @@ public static class PerformanceOptionKinds
     public const int CleanupAfter15Minutes = 15 * 60;
 
     public const string DecorativeAnimationTextMarquee = "TextMarquee";
-    public const string DecorativeAnimationVinylRotation = "VinylRotation";
-    public const string DecorativeAnimationGlanceRotation = "GlanceRotation";
     public const string DecorativeAnimationCompactAmbient = "CompactAmbient";
 
     public static IReadOnlyList<string> SupportedDecorativeAnimationOptions { get; } =
         Array.AsReadOnly(new[]
         {
             DecorativeAnimationTextMarquee,
-            DecorativeAnimationVinylRotation,
-            DecorativeAnimationGlanceRotation,
             DecorativeAnimationCompactAmbient
         });
 
@@ -76,8 +72,6 @@ public sealed record PerformancePresentationSettings(
     string CacheBudget,
     string HiddenCacheCleanupScope,
     bool AllowTextMarqueeAnimations,
-    bool AllowVinylRotationAnimations,
-    bool AllowGlanceImageAutoRotation,
     bool AllowCompactAmbientAnimations,
     bool IdleWorkingSetTrimEnabled,
     bool ImmediateHiddenWorkingSetTrimEnabled,

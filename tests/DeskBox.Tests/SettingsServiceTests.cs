@@ -204,17 +204,13 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(SettingsMigrationPipeline.CurrentSchemaVersion, service.Settings.SchemaVersion);
         Assert.Equal(15, service.Settings.SchemaVersion);
 
-        // Widgets survive the chain (and the layout-store adoption): both
-        // instances keep their identity, kind, and legacy geometry — the 5→6
+        // Widgets survive the chain (and the layout-store adoption): file
+        // widget keeps its identity, kind, and legacy geometry — the 5→6
         // hop must not move a window while capturing the first topology.
         WidgetConfig fileWidget = Assert.Single(
             service.Settings.Widgets,
             widget => widget.Id == "desktop-files");
-        WidgetConfig todoWidget = Assert.Single(
-            service.Settings.Widgets,
-            widget => widget.Id == "tasks");
         Assert.Equal(WidgetKind.File, fileWidget.WidgetKind);
-        Assert.Equal(WidgetKind.Todo, todoWidget.WidgetKind);
         Assert.Equal(120, fileWidget.X);
         Assert.Equal(80, fileWidget.Y);
         Assert.Equal(420, fileWidget.Width);
@@ -224,7 +220,6 @@ public sealed class SettingsServiceTests : IDisposable
         // and gain Unbound homes — no profiles exist yet to infer from, and
         // the legacy entries carry no stable monitor ids.
         Assert.Equal(WidgetScreenBindingMode.Unbound, fileWidget.ScreenBindingMode);
-        Assert.Equal(WidgetScreenBindingMode.Unbound, todoWidget.ScreenBindingMode);
         Assert.Equal(
             SettingsService.WidgetNewPlacementCursorDisplay,
             service.Settings.WidgetNewPlacementTarget);
@@ -235,18 +230,10 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Empty(service.Settings.WidgetTopologyLayouts);
         Assert.Null(service.Settings.ActiveWidgetTopologyKey);
 
-        // 6→7: the retired local filename index needs fresh consent, so all
-        // three Everything settings reset regardless of the stored values.
-        Assert.False(service.Settings.SearchEverythingEnabled);
-        Assert.Equal(string.Empty, service.Settings.SearchEverythingExecutablePath);
-        Assert.False(service.Settings.SearchEverythingAdvancedSyntaxEnabled);
-
         // 7→8: the all-or-nothing decorative switch fans out to the
-        // individual effects; glance rotation becomes independent and on.
+        // individual effects.
         Assert.True(service.Settings.EnableTextMarqueeAnimations);
-        Assert.True(service.Settings.EnableVinylRotationAnimations);
         Assert.True(service.Settings.EnableCompactAmbientAnimations);
-        Assert.True(service.Settings.EnableGlanceImageAutoRotation);
 
         // 8→9: legacy stacks off becomes (master on, auto off) so manual
         // stacks stay visible, and the stack details ride along untouched.
@@ -276,27 +263,6 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.True(reloaded.Settings.FileStacksEnabled);
         Assert.False(reloaded.Settings.FileStackAutoStacking);
         Assert.Equal(2, reloaded.Settings.Widgets.Count);
-    }
-
-    [Fact]
-    public async Task SaveAsync_PreservesDisabledStateForIndividualGlanceWidgets()
-    {
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-        service.Settings.Widgets.Add(new WidgetConfig
-        {
-            Name = "Photo",
-            WidgetKind = WidgetKind.Glance,
-            IsVisible = false,
-            IsDisabled = true
-        });
-
-        await service.SaveAsync();
-
-        Assert.True(Assert.Single(service.Settings.Widgets).IsDisabled);
-        var reloaded = new SettingsService(_settingsRoot);
-        await reloaded.LoadAsync();
-        Assert.True(Assert.Single(reloaded.Settings.Widgets).IsDisabled);
     }
 
     [Fact]
@@ -385,78 +351,6 @@ public sealed class SettingsServiceTests : IDisposable
         var reloaded = new SettingsService(_settingsRoot);
         await reloaded.LoadAsync();
         Assert.Equal("pt-BR", reloaded.Settings.Language);
-    }
-
-    [Fact]
-    public async Task LoadAsync_PreservesQuickCaptureWidgetsAndRemovesLegacyProductivityWidgets()
-    {
-        var settings = new AppSettings
-        {
-            QuickCaptureEnabled = true,
-            Widgets =
-            [
-                new WidgetConfig
-                {
-                    Id = "quick-capture",
-                    Name = "Quick Capture",
-                    WidgetKind = WidgetKind.QuickCapture,
-                    IsVisible = true
-                },
-                new WidgetConfig
-                {
-                    Id = "legacy-productivity",
-                    Name = "Legacy",
-                    WidgetKind = WidgetKind.Productivity,
-                    IsVisible = true
-                }
-            ]
-        };
-
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            JsonSerializer.Serialize(settings, s_jsonOptions));
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.True(service.Settings.QuickCaptureEnabled);
-        var widget = Assert.Single(service.Settings.Widgets);
-        Assert.Equal("quick-capture", widget.Id);
-        Assert.Equal(WidgetKind.QuickCapture, widget.WidgetKind);
-    }
-
-    [Fact]
-    public async Task LoadAsync_PreservesFutureWidgetKindsAndMetadata()
-    {
-        var settings = new AppSettings
-        {
-            Widgets =
-            [
-                new WidgetConfig
-                {
-                    Id = "weather",
-                    Name = "Weather",
-                    WidgetKind = WidgetKind.Weather,
-                    Metadata =
-                    {
-                        ["city"] = "Shanghai",
-                        ["unit"] = "metric"
-                    }
-                }
-            ]
-        };
-
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            JsonSerializer.Serialize(settings, s_jsonOptions));
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        var widget = Assert.Single(service.Settings.Widgets);
-        Assert.Equal(WidgetKind.Weather, widget.WidgetKind);
-        Assert.Equal("Shanghai", widget.Metadata["city"]);
-        Assert.Equal("metric", widget.Metadata["unit"]);
     }
 
     [Fact]
@@ -616,223 +510,6 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal("File", savedWidget.GetProperty("widgetKind").GetString());
         Assert.Equal("List", savedWidget.GetProperty("viewMode").GetString());
         Assert.Equal("Manual", savedWidget.GetProperty("sortMode").GetString());
-    }
-
-    [Fact]
-    public async Task LoadAsync_NormalizesQuickCaptureRecentLimit()
-    {
-        var settings = new AppSettings
-        {
-            QuickCaptureRecentLimit = 2
-        };
-
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            JsonSerializer.Serialize(settings, s_jsonOptions));
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.Equal(QuickCaptureService.DefaultRecentLimit, service.Settings.QuickCaptureRecentLimit);
-    }
-
-    [Fact]
-    public async Task LoadAsync_DefaultsQuickCaptureClipboardRecordingToDisabled()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            "{}");
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.False(service.Settings.QuickCaptureClipboardEnabled);
-        Assert.False(service.Settings.QuickCaptureImageClipboardEnabled);
-    }
-
-    [Theory]
-    [InlineData("file", "file")]
-    [InlineData(" APP ", "app")]
-    [InlineData("not-a-tab", "all")]
-    public async Task LoadAsync_NormalizesSearchDefaultTab(string storedValue, string expected)
-    {
-        var settings = new AppSettings { SearchDefaultTab = storedValue };
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            JsonSerializer.Serialize(settings, s_jsonOptions));
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.Equal(expected, service.Settings.SearchDefaultTab);
-    }
-
-    [Fact]
-    public async Task LoadAsync_DisabledQuickCaptureDisablesClipboardRecording()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            """
-            {
-              "quickCaptureEnabled": false,
-              "quickCaptureClipboardEnabled": true,
-              "quickCaptureImageClipboardEnabled": true
-            }
-            """);
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.False(FeatureWidgetSettings.IsEnabled(service.Settings, WidgetKind.QuickCapture));
-        Assert.False(service.Settings.QuickCaptureClipboardEnabled);
-        Assert.False(service.Settings.QuickCaptureImageClipboardEnabled);
-    }
-
-    [Fact]
-    public async Task LoadAsync_DisabledClipboardRecordingDisablesImageRecording()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            """
-            {
-              "quickCaptureEnabled": true,
-              "quickCaptureClipboardEnabled": false,
-              "quickCaptureImageClipboardEnabled": true
-            }
-            """);
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.True(FeatureWidgetSettings.IsEnabled(service.Settings, WidgetKind.QuickCapture));
-        Assert.False(service.Settings.QuickCaptureClipboardEnabled);
-        Assert.False(service.Settings.QuickCaptureImageClipboardEnabled);
-    }
-
-    [Fact]
-    public async Task LoadAsync_MigratesLegacyFeatureWidgetEnabledStates()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            """
-            {
-              "quickCaptureEnabled": false,
-              "todoEnabled": true
-            }
-            """);
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.False(FeatureWidgetSettings.IsEnabled(service.Settings, WidgetKind.QuickCapture));
-        Assert.True(FeatureWidgetSettings.IsEnabled(service.Settings, WidgetKind.Todo));
-        Assert.False(service.Settings.QuickCaptureEnabled);
-        Assert.True(service.Settings.TodoEnabled);
-    }
-
-    [Fact]
-    public async Task LoadAsync_FeatureWidgetEnabledStatesSynchronizeLegacyMirrors()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            """
-            {
-              "quickCaptureEnabled": true,
-              "todoEnabled": true,
-              "featureWidgetEnabledStates": {
-                "QuickCapture": false,
-                "Todo": false
-              }
-            }
-            """);
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.False(FeatureWidgetSettings.IsEnabled(service.Settings, WidgetKind.QuickCapture));
-        Assert.False(FeatureWidgetSettings.IsEnabled(service.Settings, WidgetKind.Todo));
-        Assert.False(service.Settings.QuickCaptureEnabled);
-        Assert.False(service.Settings.TodoEnabled);
-    }
-
-    [Fact]
-    public async Task LoadAsync_ClampsQuickCaptureRecentLimitToMaximum()
-    {
-        var settings = new AppSettings
-        {
-            QuickCaptureRecentLimit = 500
-        };
-
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            JsonSerializer.Serialize(settings, s_jsonOptions));
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.Equal(QuickCaptureService.MaxRecentLimit, service.Settings.QuickCaptureRecentLimit);
-    }
-
-    [Fact]
-    public async Task LoadAsync_NormalizesQuickCaptureEditorSettings()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            """
-            {
-              "quickCaptureItemPreviewLineCount": 40,
-              "quickCaptureEditorEnterBehavior": "unexpected"
-            }
-            """);
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.Equal(
-            SettingsService.MaxItemPreviewLineCount,
-            service.Settings.QuickCaptureItemPreviewLineCount);
-        Assert.Equal(
-            SettingsService.EditorEnterBehaviorCtrlEnterSaves,
-            service.Settings.QuickCaptureEditorEnterBehavior);
-    }
-
-    [Fact]
-    public async Task LoadAsync_NormalizesTodoSettings()
-    {
-        await File.WriteAllTextAsync(
-            Path.Combine(_settingsRoot, "settings.json"),
-            """
-            {
-              "todoNewTaskPosition": "Middle",
-              "todoDefaultFilter": "Someday",
-              "todoShowCompletedTasks": false,
-              "todoShowFooterStats": false,
-              "todoShowClearCompletedButton": false,
-              "todoConfirmBeforeDelete": true,
-              "todoReminderEnabled": false,
-              "todoDefaultReminderOffsetMinutes": 999,
-              "todoItemPreviewLineCount": -4,
-              "todoEditorEnterBehavior": "unexpected",
-              "managedDropAction": "Copy"
-            }
-            """);
-
-        var service = new SettingsService(_settingsRoot);
-        await service.LoadAsync();
-
-        Assert.Equal(SettingsService.TodoNewTaskPositionTop, service.Settings.TodoNewTaskPosition);
-        Assert.Equal(SettingsService.TodoDefaultFilterAll, service.Settings.TodoDefaultFilter);
-        Assert.False(service.Settings.TodoShowCompletedTasks);
-        Assert.False(service.Settings.TodoShowFooterStats);
-        Assert.False(service.Settings.TodoShowClearCompletedButton);
-        Assert.False(service.Settings.TodoReminderEnabled);
-        Assert.Equal(SettingsService.DefaultTodoReminderOffsetMinutes, service.Settings.TodoDefaultReminderOffsetMinutes);
-        Assert.Equal(SettingsService.MinItemPreviewLineCount, service.Settings.TodoItemPreviewLineCount);
-        Assert.Equal(
-            SettingsService.EditorEnterBehaviorCtrlEnterSaves,
-            service.Settings.TodoEditorEnterBehavior);
-        Assert.Equal(SettingsService.ManagedDropActionCopy, service.Settings.ManagedDropAction);
-        Assert.Equal(SettingsService.TodoLayoutModeAuto, service.Settings.TodoLayoutMode);
     }
 
     [Fact]
@@ -1344,25 +1021,9 @@ public sealed class SettingsServiceTests : IDisposable
             LayoutDensity = "Compact",
             Language = SettingsService.LanguageChinese,
             AutoStart = false,
-            QuickCaptureEnabled = true,
-            TodoEnabled = true,
-            FeatureWidgetEnabledStates = new Dictionary<string, bool>
-            {
-                [WidgetKind.Music.ToString()] = true
-            },
-            QuickCaptureShowCreatedTime = false,
-            QuickCaptureItemPreviewLineCount = 1,
-            QuickCaptureEditorEnterBehavior = SettingsService.EditorEnterBehaviorEnterSaves,
             ResizeSnapEnabled = false,
             WidgetSnapSpacing = 27,
             KeepWidgetsVisibleOnShowDesktop = false,
-            QuickCaptureTabStyle = SettingsService.WidgetTabStylePivot,
-            TodoTabStyle = SettingsService.WidgetTabStylePivot,
-            TodoShowFooterStats = true,
-            TodoItemPreviewLineCount = 1,
-            TodoEditorEnterBehavior = SettingsService.EditorEnterBehaviorEnterSaves,
-            TodoReminderEnabled = false,
-            TodoDefaultReminderOffsetMinutes = 999,
             ManagedDropAction = SettingsService.ManagedDropActionCopy,
             GlobalHotkeyEnabled = false,
             GlobalHotkeyModifiers = (int)HotkeyModifierKeys.Control,
@@ -1378,8 +1039,6 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Null(newUserDefaults.LegacyWidgetCapsuleModeEnabled);
         Assert.Null(restoredDefaults.LegacyWidgetCapsuleModeEnabled);
         Assert.True(newUserDefaults.WidgetGroupsEnabled);
-        Assert.False(newUserDefaults.SearchHotkeyEnabled);
-        Assert.Equal(newUserDefaults.SearchHotkeyEnabled, restoredDefaults.SearchHotkeyEnabled);
         Assert.Equal(SettingsService.WidgetCompactWidthModeAligned, newUserDefaults.WidgetCompactWidthMode);
         Assert.Equal(newUserDefaults.WidgetCompactWidthMode, restoredDefaults.WidgetCompactWidthMode);
         Assert.Equal(
@@ -1413,25 +1072,7 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(newUserDefaults.WidgetBorderColorMode, restoredDefaults.WidgetBorderColorMode);
         Assert.Equal(SettingsService.DefaultWidgetMaterialIntensity, newUserDefaults.WidgetMaterialIntensity);
         Assert.Equal(newUserDefaults.WidgetMaterialIntensity, restoredDefaults.WidgetMaterialIntensity);
-        Assert.True(newUserDefaults.AutoCheckForUpdates);
-        Assert.Equal(newUserDefaults.AutoCheckForUpdates, restoredDefaults.AutoCheckForUpdates);
-        Assert.False(newUserDefaults.QuickCaptureClipboardEnabled);
-        Assert.False(newUserDefaults.QuickCaptureImageClipboardEnabled);
-        Assert.Equal(newUserDefaults.QuickCaptureClipboardEnabled, restoredDefaults.QuickCaptureClipboardEnabled);
-        Assert.Equal(newUserDefaults.QuickCaptureImageClipboardEnabled, restoredDefaults.QuickCaptureImageClipboardEnabled);
-        Assert.True(newUserDefaults.TodoReminderEnabled);
-        Assert.Equal(SettingsService.DefaultTodoReminderOffsetMinutes, newUserDefaults.TodoDefaultReminderOffsetMinutes);
-        Assert.Equal(newUserDefaults.TodoReminderEnabled, restoredDefaults.TodoReminderEnabled);
-        Assert.Equal(newUserDefaults.TodoDefaultReminderOffsetMinutes, restoredDefaults.TodoDefaultReminderOffsetMinutes);
-        Assert.Equal(newUserDefaults.QuickCaptureTabStyle, restoredDefaults.QuickCaptureTabStyle);
-        Assert.Equal(newUserDefaults.TodoTabStyle, restoredDefaults.TodoTabStyle);
-        Assert.Equal(SettingsService.WidgetTabStyleButton, restoredDefaults.QuickCaptureTabStyle);
-        Assert.Equal(SettingsService.WidgetTabStyleButton, restoredDefaults.TodoTabStyle);
         Assert.Equal(SettingsService.LayoutDensityStandard, restoredDefaults.LayoutDensity);
-        Assert.True(restoredDefaults.QuickCaptureShowCreatedTime);
-        Assert.Equal(newUserDefaults.QuickCaptureItemPreviewLineCount, restoredDefaults.QuickCaptureItemPreviewLineCount);
-        Assert.Equal(SettingsService.DefaultQuickCaptureItemPreviewLineCount, newUserDefaults.QuickCaptureItemPreviewLineCount);
-        Assert.Equal(newUserDefaults.QuickCaptureEditorEnterBehavior, restoredDefaults.QuickCaptureEditorEnterBehavior);
         Assert.True(restoredDefaults.ResizeSnapEnabled);
         Assert.Equal(SettingsService.DefaultWidgetSnapSpacing, newUserDefaults.WidgetSnapSpacing);
         Assert.Equal(newUserDefaults.WidgetSnapSpacing, restoredDefaults.WidgetSnapSpacing);
@@ -1439,16 +1080,8 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(
             newUserDefaults.KeepWidgetsVisibleOnShowDesktop,
             restoredDefaults.KeepWidgetsVisibleOnShowDesktop);
-        Assert.False(restoredDefaults.TodoShowFooterStats);
-        Assert.Equal(newUserDefaults.TodoItemPreviewLineCount, restoredDefaults.TodoItemPreviewLineCount);
-        Assert.Equal(SettingsService.DefaultTodoItemPreviewLineCount, newUserDefaults.TodoItemPreviewLineCount);
-        Assert.False(newUserDefaults.TodoShowCompletedTasks);
-        Assert.Equal(newUserDefaults.TodoEditorEnterBehavior, restoredDefaults.TodoEditorEnterBehavior);
         Assert.Equal(SettingsService.LanguageChinese, restoredDefaults.Language);
         Assert.False(restoredDefaults.AutoStart);
-        Assert.True(restoredDefaults.QuickCaptureEnabled);
-        Assert.True(restoredDefaults.TodoEnabled);
-        Assert.True(restoredDefaults.FeatureWidgetEnabledStates[WidgetKind.Music.ToString()]);
         Assert.Equal(newUserDefaults.ManagedDropAction, restoredDefaults.ManagedDropAction);
         Assert.Equal(newUserDefaults.GlobalHotkeyEnabled, restoredDefaults.GlobalHotkeyEnabled);
         Assert.Equal(newUserDefaults.GlobalHotkeyModifiers, restoredDefaults.GlobalHotkeyModifiers);
@@ -1456,8 +1089,6 @@ public sealed class SettingsServiceTests : IDisposable
         Assert.Equal(newUserDefaults.ShowFileItemPathTooltips, restoredDefaults.ShowFileItemPathTooltips);
         Assert.Equal(SettingsService.DefaultWidgetHoverButtonActions, newUserDefaults.WidgetHoverButtonActions);
         Assert.Equal(newUserDefaults.WidgetHoverButtonActions, restoredDefaults.WidgetHoverButtonActions);
-        Assert.Equal(SettingsService.WeatherSkinStandard, newUserDefaults.WeatherSkin);
-        Assert.Equal(newUserDefaults.WeatherSkin, restoredDefaults.WeatherSkin);
         Assert.Equal(SettingsService.DefaultSearchMaxResults, newUserDefaults.SearchMaxResults);
         Assert.Equal(newUserDefaults.SearchMaxResults, restoredDefaults.SearchMaxResults);
     }

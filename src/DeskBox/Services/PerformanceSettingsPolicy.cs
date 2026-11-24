@@ -8,8 +8,6 @@ public readonly record struct EffectivePerformanceSettings(
     int HiddenCacheCleanupDelaySeconds,
     int HiddenDeepCleanupDelaySeconds,
     bool AllowTextMarqueeAnimations,
-    bool AllowVinylRotationAnimations,
-    bool AllowGlanceImageAutoRotation,
     bool AllowCompactAmbientAnimations,
     int VisibleIdleCacheCleanupDelaySeconds,
     int TransientWindowReleaseDelaySeconds,
@@ -18,8 +16,6 @@ public readonly record struct EffectivePerformanceSettings(
 {
     public bool AllowContinuousDecorativeAnimations =>
         AllowTextMarqueeAnimations ||
-        AllowVinylRotationAnimations ||
-        AllowGlanceImageAutoRotation ||
         AllowCompactAmbientAnimations;
 }
 
@@ -40,10 +36,6 @@ public static class PerformanceSettingsPolicy
 
     public const string DecorativeAnimationTextMarquee =
         PerformanceOptionKinds.DecorativeAnimationTextMarquee;
-    public const string DecorativeAnimationVinylRotation =
-        PerformanceOptionKinds.DecorativeAnimationVinylRotation;
-    public const string DecorativeAnimationGlanceRotation =
-        PerformanceOptionKinds.DecorativeAnimationGlanceRotation;
     public const string DecorativeAnimationCompactAmbient =
         PerformanceOptionKinds.DecorativeAnimationCompactAmbient;
 
@@ -79,8 +71,6 @@ public static class PerformanceSettingsPolicy
     public const bool DefaultQuiescenceWorkingSetTrimEnabled = true;
     public const bool DefaultContinuousDecorativeAnimationsEnabled = true;
     public const bool DefaultTextMarqueeAnimationsEnabled = true;
-    public const bool DefaultVinylRotationAnimationsEnabled = true;
-    public const bool DefaultGlanceImageAutoRotationEnabled = true;
     public const bool DefaultCompactAmbientAnimationsEnabled = true;
 
     // The string option normalizers live in Contracts (single source) so the
@@ -155,8 +145,6 @@ public static class PerformanceSettingsPolicy
                 CleanupAfter30Seconds,
                 CleanupAfter1Minute,
                 settings.EnableTextMarqueeAnimations,
-                settings.EnableVinylRotationAnimations,
-                settings.EnableGlanceImageAutoRotation,
                 settings.EnableCompactAmbientAnimations,
                 CleanupAfter5Minutes,
                 CleanupAfter2Minutes,
@@ -168,8 +156,6 @@ public static class PerformanceSettingsPolicy
                 CleanupAfter30Seconds,
                 CleanupAfter5Minutes,
                 settings.EnableTextMarqueeAnimations,
-                settings.EnableVinylRotationAnimations,
-                settings.EnableGlanceImageAutoRotation,
                 settings.EnableCompactAmbientAnimations,
                 CleanupAfter10Minutes,
                 CleanupAfter10Minutes,
@@ -194,10 +180,6 @@ public static class PerformanceSettingsPolicy
             settings.HiddenCacheCleanupScope);
         bool allowTextMarqueeAnimations =
             settings.EnableTextMarqueeAnimations;
-        bool allowVinylRotationAnimations =
-            settings.EnableVinylRotationAnimations;
-        bool allowGlanceImageAutoRotation =
-            settings.EnableGlanceImageAutoRotation;
         bool allowCompactAmbientAnimations =
             settings.EnableCompactAmbientAnimations;
 
@@ -239,21 +221,11 @@ public static class PerformanceSettingsPolicy
             allowTextMarqueeAnimations,
             value => settings.EnableTextMarqueeAnimations = value);
         changed |= SetIfChanged(
-            settings.EnableVinylRotationAnimations,
-            allowVinylRotationAnimations,
-            value => settings.EnableVinylRotationAnimations = value);
-        changed |= SetIfChanged(
-            settings.EnableGlanceImageAutoRotation,
-            allowGlanceImageAutoRotation,
-            value => settings.EnableGlanceImageAutoRotation = value);
-        changed |= SetIfChanged(
             settings.EnableCompactAmbientAnimations,
             allowCompactAmbientAnimations,
             value => settings.EnableCompactAmbientAnimations = value);
         bool legacyDecorativeAnimationsEnabled =
             allowTextMarqueeAnimations &&
-            allowVinylRotationAnimations &&
-            allowGlanceImageAutoRotation &&
             allowCompactAmbientAnimations;
         changed |= SetIfChanged(
             settings.EnableContinuousDecorativeAnimations,
@@ -288,8 +260,6 @@ public static class PerformanceSettingsPolicy
                     settings.HiddenCacheCleanupScope);
             settings.EnableContinuousDecorativeAnimations =
                 settings.EnableTextMarqueeAnimations &&
-                settings.EnableVinylRotationAnimations &&
-                settings.EnableGlanceImageAutoRotation &&
                 settings.EnableCompactAmbientAnimations;
             return;
         }
@@ -306,8 +276,6 @@ public static class PerformanceSettingsPolicy
         settings.HiddenCacheCleanupScope = preset.HiddenCacheCleanupScope;
         settings.EnableContinuousDecorativeAnimations =
             settings.EnableTextMarqueeAnimations &&
-            settings.EnableVinylRotationAnimations &&
-            settings.EnableGlanceImageAutoRotation &&
             settings.EnableCompactAmbientAnimations;
     }
 
@@ -337,8 +305,6 @@ public static class PerformanceSettingsPolicy
             hiddenDelay,
             deepDelay,
             settings.EnableTextMarqueeAnimations,
-            settings.EnableVinylRotationAnimations,
-            settings.EnableGlanceImageAutoRotation,
             settings.EnableCompactAmbientAnimations,
             NormalizeVisibleIdleCacheCleanupDelaySeconds(
                 settings.VisibleIdleCacheCleanupDelaySeconds),

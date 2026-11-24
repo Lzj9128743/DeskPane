@@ -23,7 +23,6 @@ public static class ServiceRegistry
                 sp.GetRequiredService<DeskBoxDataBackupService>(),
                 sp.GetRequiredService<SettingsService>(),
                 sp.GetRequiredService<ICredentialStore>()));
-        services.AddSingleton<DeskBoxAttachmentHealthService>();
         services.AddSingleton<DeskBoxDiagnosticsBundleService>();
         services.AddSingleton<FileService>();
         services.AddSingleton<ResizeGuideOverlayService>();
@@ -34,15 +33,8 @@ public static class ServiceRegistry
             new OrganizerService(
                 sp.GetRequiredService<SettingsService>(),
                 sp.GetRequiredService<FileService>()));
-        services.AddSingleton<QuickCaptureService>(sp => new QuickCaptureService(
-            recycleAttachmentFileAsync: path =>
-                sp.GetRequiredService<FileService>().DeleteEntryAsync(path, recycle: true)));
         services.AddSingleton<LocalizationService>();
         services.AddSingleton<ThemeService>();
-
-        // ── Update (factory-based) ───────────────────────────────────────
-        services.AddSingleton<IAppUpdateService>(_ =>
-            AppUpdateServiceFactory.Create(AppDistributionService.Current));
 
         return services;
     }

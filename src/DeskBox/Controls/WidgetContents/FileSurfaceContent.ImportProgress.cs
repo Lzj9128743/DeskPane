@@ -196,18 +196,18 @@ public sealed partial class FileSurfaceContent
         if (progress.TotalBytes is { } totalBytes)
         {
             parts.Add(
-                $"{FileMetaService.FormatSize(progress.BytesTransferred)} / " +
-                FileMetaService.FormatSize(totalBytes));
+                $"{DeskBox.Helpers.ByteSizeFormatter.FormatSize(progress.BytesTransferred)} / " +
+                DeskBox.Helpers.ByteSizeFormatter.FormatSize(totalBytes));
         }
         else if (progress.BytesTransferred > 0)
         {
-            parts.Add(FileMetaService.FormatSize(progress.BytesTransferred));
+            parts.Add(DeskBox.Helpers.ByteSizeFormatter.FormatSize(progress.BytesTransferred));
         }
 
         if (progress.BytesPerSecond is > 0)
         {
             parts.Add(
-                FileMetaService.FormatSize(
+                DeskBox.Helpers.ByteSizeFormatter.FormatSize(
                     (long)Math.Min(long.MaxValue, progress.BytesPerSecond.Value)) +
                 "/s");
         }

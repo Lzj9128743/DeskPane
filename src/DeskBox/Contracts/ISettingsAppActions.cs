@@ -24,8 +24,6 @@ public interface ISettingsAppActions
 
     Task ShutdownForRestartAsync();
 
-    Task ShutdownForUpdateAsync();
-
     /// <summary>Schedules the app restart that outlives this process.</summary>
     AppRelaunchScheduleResult ScheduleRestartAfterCurrentProcessExit();
 
@@ -40,12 +38,6 @@ public interface ISettingsAppActions
     void ShowOnboarding(bool resumeProgress = false);
 
     void ShowDesktopOrganizationWindow(nint ownerWindowHandle = 0);
-
-    void OpenReleaseNotesWindow(
-        AppUpdateManifest? manifest,
-        string version,
-        Func<CancellationToken, Task<AppUpdateManifest?>>? manifestLoader,
-        nint ownerWindowHandle = 0);
 
     // ── Shell state ─────────────────────────────────────────────────
 

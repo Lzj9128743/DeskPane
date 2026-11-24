@@ -29,7 +29,6 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         settings.SettingsChanged += () => notified++;
 
         editor.SetAutoStart(false);
-        editor.SetAutoCheckForUpdates(false);
         coordinator.SetDoubleClickToOpen(false);
         editor.SetFileItemSystemContextMenuEnabled(true);
         coordinator.SetResizeSnapEnabled(false);
@@ -39,7 +38,6 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         editor.SetImmediateHiddenWorkingSetTrimEnabled(false);
 
         Assert.False(settings.Settings.AutoStart);
-        Assert.False(settings.Settings.AutoCheckForUpdates);
         Assert.False(settings.Settings.DoubleClickToOpen);
         Assert.True(settings.Settings.FileItemSystemContextMenuEnabled);
         Assert.False(settings.Settings.ResizeSnapEnabled);
@@ -47,12 +45,12 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         Assert.False(settings.Settings.ShowHoverButtons);
         Assert.False(settings.Settings.IdleWorkingSetTrimEnabled);
         Assert.False(settings.Settings.ImmediateHiddenWorkingSetTrimEnabled);
-        Assert.Equal(9, notified);
+        Assert.Equal(8, notified);
 
         // Unchanged writes must not notify or save again.
         coordinator.SetDoubleClickToOpen(false);
         editor.SetIdleWorkingSetTrimEnabled(false);
-        Assert.Equal(9, notified);
+        Assert.Equal(8, notified);
     }
 
     [Fact]
@@ -148,7 +146,6 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         var settings = new SettingsService(_root);
         var coordinator = new InteractionSettingsCoordinator(settings);
 
-        coordinator.SetAutoCheckForUpdates(false);
         coordinator.SetSilentStartup(true);
         coordinator.SetDoubleClickToOpen(false);
         coordinator.SetFileItemSystemContextMenuEnabled(true);
@@ -166,7 +163,6 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         await reloaded.LoadAsync();
         InteractionSettingsSnapshot snapshot =
             new InteractionSettingsCoordinator(reloaded).ReadAll();
-        Assert.False(snapshot.AutoCheckForUpdates);
         Assert.True(reloaded.Settings.Core.SilentStartup);
         Assert.False(snapshot.DoubleClickToOpen);
         Assert.True(snapshot.FileItemSystemContextMenuEnabled);
@@ -196,7 +192,6 @@ public sealed class InteractionSettingsCoordinatorTests : IDisposable
         Assert.True(coordinator.IsStopped);
 
         await settings.SaveAsync();
-        Assert.True(settings.Settings.AutoCheckForUpdates);
         Assert.Equal(
             SettingsService.WidgetLayerModeDynamic,
             settings.Settings.WidgetLayerMode);

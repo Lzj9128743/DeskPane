@@ -209,9 +209,7 @@ public sealed class DesktopAutoOrganizationWatcherDelayTests : IDisposable
                 settingsService,
                 fileService,
                 organizer,
-                new ThemeService(settingsService),
-                new QuickCaptureService(
-                    new QuickCaptureStore(Path.Combine(root, "quick-capture"))),
+                new ThemeService(settingsService))),
                 () => desktopPath,
                 recycleManagedFolderDeletes: false);
             var watcher = new DesktopAutoOrganizationWatcher(

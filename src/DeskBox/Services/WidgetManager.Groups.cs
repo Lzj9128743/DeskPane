@@ -684,38 +684,6 @@ public sealed partial class WidgetManager
 
     private string ResolveGroupMemberDisplayName(WidgetConfig config)
     {
-        if (!config.IsDefaultTitle)
-        {
-            return string.IsNullOrWhiteSpace(config.Name)
-                ? config.WidgetKind.ToString()
-                : config.Name;
-        }
-
-        string? localizationKey = config.WidgetKind switch
-        {
-            WidgetKind.QuickCapture => "QuickCapture.Name",
-            WidgetKind.Todo => "Todo.Title",
-            WidgetKind.Weather => "Weather.Title",
-            WidgetKind.Music => "Music.Title",
-            WidgetKind.Search => "Search.Title",
-            WidgetKind.Glance => "Glance.Title",
-            WidgetKind.Tags => "Tags.Title",
-            WidgetKind.SystemMonitor => "SystemMonitor.Title",
-            _ => null
-        };
-        if (!string.IsNullOrWhiteSpace(localizationKey))
-        {
-            string localized = _localizationService.T(localizationKey);
-            if (!string.IsNullOrWhiteSpace(localized) &&
-                !string.Equals(
-                    localized,
-                    localizationKey,
-                    StringComparison.Ordinal))
-            {
-                return localized;
-            }
-        }
-
         return string.IsNullOrWhiteSpace(config.Name)
             ? config.WidgetKind.ToString()
             : config.Name;

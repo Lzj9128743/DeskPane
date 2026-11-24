@@ -29,7 +29,6 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
     private WidgetMaterialBackdropAppearance _appearance;
     private ICompositionSupportsSystemBackdrop? _target;
     private SystemBackdropConfiguration? _configuration;
-    private MicaController? _micaController;
     private DesktopAcrylicController? _acrylicController;
     private bool _isSuspended;
     private bool _isDisposed;
@@ -137,12 +136,6 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
         if (_isDisposed || _isSuspended) return;
         try
         {
-            if (SettingsService.IsMicaMaterial(_appearance.MaterialType))
-            {
-                ApplyMicaController();
-                return;
-            }
-
             if (SettingsService.IsAcrylicMaterial(_appearance.MaterialType))
             {
                 ApplyAcrylicController();
@@ -160,49 +153,6 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
         }
     }
 
-    private void ApplyMicaController()
-    {
-        if (_target is null ||
-            _configuration is null ||
-            !WindowsCompatibilityService.SupportsMica)
-        {
-            DisposeControllers();
-            return;
-        }
-
-        DisposeAcrylicController();
-        bool useAlt = _appearance.MaterialType ==
-            SettingsService.WidgetMaterialTypeMicaAlt;
-        if (_micaController is null)
-        {
-            _micaController = new MicaController();
-            _micaController.SetSystemBackdropConfiguration(_configuration);
-            if (!_micaController.AddSystemBackdropTarget(_target))
-            {
-                throw new InvalidOperationException(
-                    "Mica backdrop target registration failed.");
-            }
-        }
-
-        _micaController.Kind = useAlt ? MicaKind.BaseAlt : MicaKind.Base;
-        _micaController.TintColor =
-            WidgetMaterialVisualCalculator.BuildContentTintColor(
-                _appearance.IsDark,
-                _appearance.AccentColor);
-        _micaController.FallbackColor =
-            WidgetMaterialVisualCalculator.BuildMicaFallbackColor(
-                _appearance.IsDark,
-                useAlt);
-        WidgetMaterialOpacityProfile profile =
-            WidgetMaterialVisualCalculator.CalculateMica(
-                _appearance.IsDark,
-                useAlt,
-                _appearance.MaterialIntensity);
-        _micaController.TintOpacity = (float)profile.TintOpacity;
-        _micaController.LuminosityOpacity =
-            (float)profile.LuminosityOpacity;
-    }
-
     private void ApplyAcrylicController()
     {
         if (_target is null ||
@@ -213,9 +163,6 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
             return;
         }
 
-        DisposeMicaController();
-        bool useBase = _appearance.MaterialType ==
-            SettingsService.WidgetMaterialTypeAcrylicBase;
         if (_acrylicController is null || _acrylicController.IsClosed)
         {
             _acrylicController = new DesktopAcrylicController();
@@ -227,9 +174,7 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
             }
         }
 
-        _acrylicController.Kind = useBase
-            ? DesktopAcrylicKind.Base
-            : DesktopAcrylicKind.Thin;
+        _acrylicController.Kind = DesktopAcrylicKind.Thin;
         Windows.UI.Color tintColor =
             WidgetMaterialVisualCalculator.BuildContentTintColor(
                 _appearance.IsDark,
@@ -239,7 +184,7 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
         WidgetMaterialOpacityProfile profile =
             WidgetMaterialVisualCalculator.CalculateAcrylic(
                 _appearance.IsDark,
-                useBase,
+                useBase: false,
                 _appearance.SurfaceOpacity,
                 _appearance.MaterialIntensity);
         _acrylicController.TintOpacity = (float)profile.TintOpacity;
@@ -254,7 +199,6 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
             return;
         }
 
-        _micaController?.SetSystemBackdropConfiguration(_configuration);
         if (_acrylicController is { IsClosed: false })
         {
             _acrylicController.SetSystemBackdropConfiguration(_configuration);
@@ -263,29 +207,7 @@ internal sealed partial class WidgetMaterialSystemBackdrop : SystemBackdrop, IDi
 
     private void DisposeControllers()
     {
-        DisposeMicaController();
         DisposeAcrylicController();
-    }
-
-    private void DisposeMicaController()
-    {
-        if (_micaController is null)
-        {
-            return;
-        }
-
-        try
-        {
-            _micaController.RemoveAllSystemBackdropTargets();
-            _micaController.Dispose();
-        }
-        catch
-        {
-        }
-        finally
-        {
-            _micaController = null;
-        }
     }
 
     private void DisposeAcrylicController()

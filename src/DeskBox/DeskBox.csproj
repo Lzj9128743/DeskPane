@@ -32,8 +32,6 @@
          across incompatible native dependency policies. -->
     <DeskBoxRustCrtLinkage Condition="'$(DeskBoxRustCrtLinkage)' == ''">Static</DeskBoxRustCrtLinkage>
     <DeskBoxShellThumbnailProxy Condition="'$(DeskBoxShellThumbnailProxy)' == ''">true</DeskBoxShellThumbnailProxy>
-    <EverythingSdkArchitecture Condition="'$(RuntimeIdentifier)' == 'win-arm64' or '$(Platform)' == 'ARM64'">ARM64</EverythingSdkArchitecture>
-    <EverythingSdkArchitecture Condition="'$(EverythingSdkArchitecture)' == ''">x64</EverythingSdkArchitecture>
     <DefineConstants Condition="'$(DeskBoxDistribution)' == 'Store'">$(DefineConstants);DESKBOX_STORE</DefineConstants>
     <AllowUnsafeBlocks>true</AllowUnsafeBlocks>
     <ApplicationIcon>Assets\deskbox.ico</ApplicationIcon>
@@ -190,39 +188,7 @@
     <PackageReference Include="H.NotifyIcon.WinUI" Version="2.5.0-beta.1" />
     <PackageReference Include="CommunityToolkit.Mvvm" Version="8.4.2" />
     <PackageReference Include="Microsoft.Extensions.DependencyInjection" Version="8.0.1" />
-    <PackageReference Include="Markdig" Version="1.3.2" />
   </ItemGroup>
-
-  <ItemGroup>
-    <None Remove="ThirdParty\Everything\Everything64.dll" />
-    <None Remove="ThirdParty\Everything\EverythingARM64.dll" />
-    <Content Include="ThirdParty\Everything\Everything64.dll" Condition="'$(EverythingSdkArchitecture)' == 'x64'">
-      <Link>EverythingSdk.dll</Link>
-      <TargetPath>EverythingSdk.dll</TargetPath>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-    <Content Include="ThirdParty\Everything\EverythingARM64.dll" Condition="'$(EverythingSdkArchitecture)' == 'ARM64'">
-      <Link>EverythingSdk.dll</Link>
-      <TargetPath>EverythingSdk.dll</TargetPath>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </Content>
-    <None Update="ThirdParty\Everything\LICENSE.txt">
-      <TargetPath>ThirdParty\Everything\LICENSE.txt</TargetPath>
-      <CopyToOutputDirectory>PreserveNewest</CopyToOutputDirectory>
-      <CopyToPublishDirectory>PreserveNewest</CopyToPublishDirectory>
-    </None>
-  </ItemGroup>
-
-  <Target Name="ValidateEverythingSdkArchitecture" BeforeTargets="PrepareForBuild;Publish" Condition="'$(DesignTimeBuild)' != 'true'">
-    <Error
-      Condition="('$(Platform)' == 'x64' and '$(RuntimeIdentifier)' == 'win-arm64') or ('$(Platform)' == 'ARM64' and '$(RuntimeIdentifier)' == 'win-x64')"
-      Text="Everything SDK requires matching Platform and RuntimeIdentifier architectures." />
-    <Error
-      Condition="'$(EverythingSdkArchitecture)' != 'x64' and '$(EverythingSdkArchitecture)' != 'ARM64'"
-      Text="Everything SDK supports only x64 and ARM64 DeskBox builds." />
-  </Target>
 
   <ItemGroup>
     <!--
@@ -233,10 +199,6 @@
     -->
     <Content Remove="Assets\wechat-qrcode.jpg" />
     <Content Remove="Assets\Support\*.png" />
-    <!-- city data is consumed exclusively through the embedded resource in
-         CitySearchService; the SDK wildcard Content copy is dead weight in
-         every package -->
-    <Content Remove="Assets\Cities\cities.json" />
     <Content Include="Assets\deskbox.ico">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -250,15 +212,6 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\deskbox-mark-slab-2.svg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\OnboardingScene\file-txt.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\OnboardingScene\file-zip.png">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\OnboardingScene\file-jpg.png">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
     <Content Include="Assets\deskbox-tray-light.ico">
@@ -276,18 +229,6 @@
     <Content Include="Assets\wechat-qrcode.jpg" Condition="'$(DeskBoxDistribution)' != 'Store'">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
-    <Content Include="Assets\SettingsNavIcons\*.svg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\WeatherIcons\**\*.svg">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\WeatherIcons\LICENSE-meteocons.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
-    <Content Include="Assets\WeatherIcons\LICENSE-fluent-emoji.txt">
-      <CopyToOutputDirectory>Always</CopyToOutputDirectory>
-    </Content>
     <Content Include="Assets\WidgetTitleIcons\*.svg">
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
     </Content>
@@ -296,20 +237,8 @@
       <CopyToOutputDirectory>Always</CopyToOutputDirectory>
       <CopyToPublishDirectory>Always</CopyToPublishDirectory>
     </Content>
-    <EmbeddedResource Include="Assets\Cities\cities.json" />
     <EmbeddedResource Include="Strings\zh-CN.json" />
-    <EmbeddedResource Include="Strings\zh-TW.json" />
     <EmbeddedResource Include="Strings\en-US.json" />
-    <EmbeddedResource Include="Strings\ja-JP.json" />
-    <EmbeddedResource Include="Strings\de-DE.json" />
-    <EmbeddedResource Include="Strings\pt-BR.json" />
-    <EmbeddedResource Include="Strings\hi-IN.json" />
-    <EmbeddedResource Include="Strings\es-ES.json" />
-    <EmbeddedResource Include="Strings\fr-FR.json" />
-    <EmbeddedResource Include="Strings\ar-SA.json" />
-    <EmbeddedResource Include="Strings\bn-BD.json" />
-    <EmbeddedResource Include="Strings\ru-RU.json" />
-    <EmbeddedResource Include="Strings\ko-KR.json" />
   </ItemGroup>
 
   <ItemGroup>
@@ -326,29 +255,6 @@
   <PropertyGroup Condition="'$(DisableHasPackageAndPublishMenuAddedByProject)' != 'true' and '$(EnableMsixTooling)' == 'true'">
     <HasPackageAndPublishMenu>true</HasPackageAndPublishMenu>
   </PropertyGroup>
-
-  <Target Name="BuildDeskBoxUpdater" BeforeTargets="Build" Condition="'$(DesignTimeBuild)' != 'true' and '$(DeskBoxDistribution)' != 'Store' and '$(PublishAot)' != 'true'">
-    <MSBuild
-      Projects="..\DeskBox.Updater\DeskBox.Updater.csproj"
-      Targets="Build"
-      Properties="Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier)" />
-  </Target>
-
-  <Target Name="CopyDeskBoxUpdater" AfterTargets="Build" Condition="'$(DesignTimeBuild)' != 'true' and '$(DeskBoxDistribution)' != 'Store' and '$(PublishAot)' != 'true'">
-    <ItemGroup>
-      <DeskBoxUpdaterOutput Include="..\DeskBox.Updater\bin\$(Platform)\$(Configuration)\$(TargetFramework)\$(RuntimeIdentifier)\DeskBox.Updater.*" Condition="'$(RuntimeIdentifier)' != ''" />
-      <DeskBoxUpdaterOutput Include="..\DeskBox.Updater\bin\$(Platform)\$(Configuration)\$(TargetFramework)\DeskBox.Updater.*" Condition="'$(RuntimeIdentifier)' == '' and '$(Platform)' != 'AnyCPU' and '$(Platform)' != ''" />
-      <DeskBoxUpdaterOutput Include="..\DeskBox.Updater\bin\$(Configuration)\$(TargetFramework)\DeskBox.Updater.*" Condition="'$(RuntimeIdentifier)' == '' and ('$(Platform)' == 'AnyCPU' or '$(Platform)' == '')" />
-    </ItemGroup>
-    <Copy SourceFiles="@(DeskBoxUpdaterOutput)" DestinationFolder="$(OutDir)" SkipUnchangedFiles="true" />
-  </Target>
-
-  <Target Name="PublishDeskBoxUpdater" AfterTargets="Publish" Condition="'$(DesignTimeBuild)' != 'true' and '$(DeskBoxDistribution)' != 'Store'">
-    <MSBuild
-      Projects="..\DeskBox.Updater\DeskBox.Updater.csproj"
-      Targets="Publish"
-      Properties="Configuration=$(Configuration);Platform=$(Platform);RuntimeIdentifier=$(RuntimeIdentifier);DeskBoxAotAudit=$(DeskBoxAotAudit);DeskBoxAotSmokeHarness=$(DeskBoxAotSmokeHarness);PublishAot=$(PublishAot);IlcUseEnvironmentalTools=$(IlcUseEnvironmentalTools);SelfContained=$(SelfContained);PublishSingleFile=false;PublishDir=$(PublishDir)" />
-  </Target>
 
   <Target
     Name="BuildDeskBoxRustNative"

@@ -83,23 +83,11 @@ public abstract partial class WidgetWindowBase
             else
             {
                 ClearSolidColorBackdrop();
-
-                if (SettingsService.IsMicaMaterial(materialType))
-                {
-                    controllerApplied = ApplyMicaController(
-                        isDark,
-                        tintColor,
-                        materialType == SettingsService.WidgetMaterialTypeMicaAlt);
-                }
-
-                if (!controllerApplied && SettingsService.IsAcrylicMaterial(materialType))
-                {
-                    controllerApplied = ApplyAcrylicController(
-                        isDark,
-                        tintColor,
-                        surfaceOpacity,
-                        materialType == SettingsService.WidgetMaterialTypeAcrylicBase);
-                }
+                controllerApplied = ApplyAcrylicController(
+                    isDark,
+                    tintColor,
+                    surfaceOpacity,
+                    useBase: false);
             }
 
             if (controllerApplied)

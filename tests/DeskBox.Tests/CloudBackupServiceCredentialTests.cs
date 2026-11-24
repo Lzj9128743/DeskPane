@@ -151,7 +151,7 @@ public sealed class CloudBackupServiceCredentialTests : IDisposable
         settings.CloudBackup.CloudBackupRemotePath = "   ";
         settings.CloudBackup.CloudBackupRetentionCount = 0;
         settings.CloudBackup.CloudBackupIntervalMinutes = 1;
-        settings.CloudBackup.CloudBackupTodoDataEnabled = true;
+        settings.CloudBackup.CloudBackupWidgetStyleEnabled = true;
 
         CloudBackupOptions options = CloudBackupSettingsPolicy.GetOptions(settings);
 
@@ -181,7 +181,7 @@ public sealed class CloudBackupServiceCredentialTests : IDisposable
             ServerUrl: serverUrl,
             RemotePath: "DeskBox/backups",
             Username: username,
-            Scope: CloudBackupDomain.TodoData,
+            Scope: CloudBackupDomain.WidgetStyle,
             RetentionCount: CloudBackupSettingsPolicy.DefaultRetentionCount,
             IntervalMinutes: CloudBackupSettingsPolicy.DefaultIntervalMinutes,
             LastSuccessUtc: DateTimeOffset.MinValue);

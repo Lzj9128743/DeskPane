@@ -76,16 +76,6 @@ internal static class CloudBackupSettingsPolicy
         ArgumentNullException.ThrowIfNull(settings);
         CloudBackupSettingsSlice slice = settings.CloudBackup;
         CloudBackupDomain scope = CloudBackupDomain.None;
-        if (slice.CloudBackupTodoDataEnabled)
-        {
-            scope |= CloudBackupDomain.TodoData;
-        }
-
-        if (slice.CloudBackupQuickCaptureDataEnabled)
-        {
-            scope |= CloudBackupDomain.QuickCaptureData;
-        }
-
         if (slice.CloudBackupWidgetStyleEnabled)
         {
             scope |= CloudBackupDomain.WidgetStyle;

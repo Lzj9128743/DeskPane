@@ -14,6 +14,14 @@ public partial class WidgetViewModel
 {
     private void EnsureFolderBackedConfig()
     {
+        if (Config.IsVirtualDesktopGroup)
+        {
+            Config.FollowsDefaultStoragePath = false;
+            Config.ManagedFolderName = null;
+            Config.MappedFolderPath = FileService.GetDesktopPaths().UserDesktop;
+            return;
+        }
+
         if (!string.IsNullOrWhiteSpace(Config.MappedFolderPath))
         {
             Config.MappedFolderPath = Path.GetFullPath(Config.MappedFolderPath);
@@ -114,6 +122,14 @@ public partial class WidgetViewModel
                 .OrderBy(item => !item.IsFolder)
                 .ThenBy(item => item.Name, NaturalStringComparer.CurrentCultureIgnoreCase)
                 .ToList();
+
+            if (Config.IsVirtualDesktopGroup)
+            {
+                IReadOnlyList<WidgetConfig> allWidgets = _settingsService.Settings.Widgets;
+                items = items
+                    .Where(item => VirtualDesktopGroupPolicy.ShouldIncludeItem(Config, allWidgets, item.Path))
+                    .ToList();
+            }
         }
         else
         {

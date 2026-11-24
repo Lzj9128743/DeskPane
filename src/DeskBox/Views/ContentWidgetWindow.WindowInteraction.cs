@@ -40,69 +40,14 @@ public sealed partial class ContentWidgetWindow
             file.ApplyHostEdgeDragOverFeedback(e);
             return;
         }
-
-        if (!IsCompactBoundsStateActive || CurrentContent is not TodoWidgetContentAdapter todo)
-        {
-            return;
-        }
-
-        e.AcceptedOperation = todo.CanImportExternalDrop(e.DataView)
-            ? DeskBoxDragData.HasDroppedFiles(e.DataView)
-                ? DeskBoxDragData.GetFileAssociationOperation(
-                    e.DataView,
-                    e.AllowedOperations)
-                : DataPackageOperation.Copy
-            : DataPackageOperation.None;
-        if (DeskBoxDragData.HasDroppedFiles(e.DataView))
-        {
-            bool isInternalFileDrag =
-                DeskBoxDragData.IsInternalFileDrag(e.DataView);
-            e.DragUIOverride.IsContentVisible = isInternalFileDrag;
-            e.DragUIOverride.IsGlyphVisible = isInternalFileDrag;
-            e.DragUIOverride.IsCaptionVisible = isInternalFileDrag;
-            e.DragUIOverride.Caption = isInternalFileDrag
-                ? App.Current.LocalizationService.T(
-                    "Widget.Compact.TodoDropHint")
-                : string.Empty;
-        }
-        else
-        {
-            e.DragUIOverride.IsGlyphVisible = false;
-            e.DragUIOverride.Caption =
-                e.AcceptedOperation == DataPackageOperation.None
-                    ? string.Empty
-                    : App.Current.LocalizationService.T(
-                        "Widget.Compact.TodoDropHint");
-        }
-        e.Handled = true;
     }
 
-    private async void RootGrid_Drop(object sender, DragEventArgs e)
+    private void RootGrid_Drop(object sender, DragEventArgs e)
     {
         if (CurrentContent is FileWidgetContentAdapter file)
         {
             file.HandleHostEdgeDrop(e);
             return;
-        }
-
-        if (!IsCompactBoundsStateActive || CurrentContent is not TodoWidgetContentAdapter todo)
-        {
-            return;
-        }
-
-        var deferral = e.GetDeferral();
-        try
-        {
-            e.Handled = true;
-            e.AcceptedOperation = await todo.ImportExternalDropAsync(e.DataView)
-                ? DeskBoxDragData.HasDroppedFiles(e.DataView)
-                    ? DeskBoxDragData.GetFileAssociationOperation(e.DataView)
-                    : DataPackageOperation.Copy
-                : DataPackageOperation.None;
-        }
-        finally
-        {
-            deferral.Complete();
         }
     }
 

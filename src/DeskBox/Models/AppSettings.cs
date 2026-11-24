@@ -1,4 +1,4 @@
-using System.Text.Json.Serialization;
+﻿using System.Text.Json.Serialization;
 
 namespace DeskBox.Models;
 
@@ -12,9 +12,9 @@ namespace DeskBox.Models;
 /// Batch 51 adjudication (schema-equivalent narrowing): the 220 passthrough
 /// properties below are the frozen settings.json wire contract, not removable
 /// facade weight. Serializing slice members directly was evaluated and
-/// rejected — the flat member order interleaves all 13 slices, and the one
+/// rejected 鈥?the flat member order interleaves all 13 slices, and the one
 /// legacy wire-attribute pair (<see cref="LegacyWidgetCapsuleModeEnabled"/>
-/// JsonPropertyName + WhenWritingNull) lives here — so no byte-equivalent
+/// JsonPropertyName + WhenWritingNull) lives here 鈥?so no byte-equivalent
 /// path removes these properties. Adding or removing a passthrough is a
 /// disk-schema change and requires a schema-versioned migration; runtime code
 /// reads the slices (<c>Settings.&lt;Slice&gt;.&lt;Prop&gt;</c>) and the
@@ -30,22 +30,13 @@ public class AppSettings
     /// </summary>
     public int SchemaVersion { get; set; } = 1;
 
-    // ─── Ownership slices (never serialized directly) ───────────────
+    // 鈹€鈹€鈹€ Ownership slices (never serialized directly) 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
     [JsonIgnore]
     public CoreSettingsSlice Core { get; } = new();
 
     [JsonIgnore]
     public PerformanceSettingsSlice Performance { get; } = new();
-
-    [JsonIgnore]
-    public QuickCaptureSettingsSlice QuickCapture { get; } = new();
-
-    [JsonIgnore]
-    public TodoSettingsSlice Todo { get; } = new();
-
-    [JsonIgnore]
-    public MusicSettingsSlice Music { get; } = new();
 
     [JsonIgnore]
     public WidgetShellSettingsSlice WidgetShell { get; } = new();
@@ -65,13 +56,7 @@ public class AppSettings
     [JsonIgnore]
     public WidgetLayoutSettingsSlice WidgetLayout { get; } = new();
 
-    [JsonIgnore]
-    public WeatherSettingsSlice Weather { get; } = new();
-
-    [JsonIgnore]
-    public SearchSettingsSlice Search { get; } = new();
-
-    // ─── Serialization facade (wire contract, order-significant) ──
+    // 鈹€鈹€鈹€ Serialization facade (wire contract, order-significant) 鈹€鈹€
 
     /// <inheritdoc cref="CoreSettingsSlice.Theme"/>
     public string Theme { get => Core.Theme; set => Core.Theme = value; }
@@ -133,182 +118,14 @@ public class AppSettings
     /// <inheritdoc cref="PerformanceSettingsSlice.EnableTextMarqueeAnimations"/>
     public bool EnableTextMarqueeAnimations { get => Performance.EnableTextMarqueeAnimations; set => Performance.EnableTextMarqueeAnimations = value; }
 
-    /// <inheritdoc cref="PerformanceSettingsSlice.EnableVinylRotationAnimations"/>
-    public bool EnableVinylRotationAnimations { get => Performance.EnableVinylRotationAnimations; set => Performance.EnableVinylRotationAnimations = value; }
-
-    /// <inheritdoc cref="PerformanceSettingsSlice.EnableGlanceImageAutoRotation"/>
-    public bool EnableGlanceImageAutoRotation { get => Performance.EnableGlanceImageAutoRotation; set => Performance.EnableGlanceImageAutoRotation = value; }
-
     /// <inheritdoc cref="PerformanceSettingsSlice.EnableCompactAmbientAnimations"/>
     public bool EnableCompactAmbientAnimations { get => Performance.EnableCompactAmbientAnimations; set => Performance.EnableCompactAmbientAnimations = value; }
 
-    /// <inheritdoc cref="CoreSettingsSlice.AutoCheckForUpdates"/>
-    public bool AutoCheckForUpdates { get => Core.AutoCheckForUpdates; set => Core.AutoCheckForUpdates = value; }
 
-    /// <inheritdoc cref="CoreSettingsSlice.LastUpdateCheckAt"/>
-    public DateTimeOffset? LastUpdateCheckAt { get => Core.LastUpdateCheckAt; set => Core.LastUpdateCheckAt = value; }
 
-    /// <inheritdoc cref="CoreSettingsSlice.ShowReleaseNotesAfterUpdate"/>
-    public bool ShowReleaseNotesAfterUpdate { get => Core.ShowReleaseNotesAfterUpdate; set => Core.ShowReleaseNotesAfterUpdate = value; }
 
-    /// <inheritdoc cref="CoreSettingsSlice.LastRunVersion"/>
-    public string? LastRunVersion { get => Core.LastRunVersion; set => Core.LastRunVersion = value; }
 
-    /// <inheritdoc cref="CoreSettingsSlice.AutoDownloadUpdates"/>
-    public bool AutoDownloadUpdates { get => Core.AutoDownloadUpdates; set => Core.AutoDownloadUpdates = value; }
 
-    /// <inheritdoc cref="CoreSettingsSlice.ShowUpdateToastNotification"/>
-    public bool ShowUpdateToastNotification { get => Core.ShowUpdateToastNotification; set => Core.ShowUpdateToastNotification = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureEnabled"/>
-    public bool QuickCaptureEnabled { get => QuickCapture.QuickCaptureEnabled; set => QuickCapture.QuickCaptureEnabled = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoEnabled"/>
-    public bool TodoEnabled { get => Todo.TodoEnabled; set => Todo.TodoEnabled = value; }
-
-    /// <inheritdoc cref="WidgetLayoutSettingsSlice.FeatureWidgetEnabledStates"/>
-    public Dictionary<string, bool> FeatureWidgetEnabledStates { get => WidgetLayout.FeatureWidgetEnabledStates; set => WidgetLayout.FeatureWidgetEnabledStates = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureClipboardEnabled"/>
-    public bool QuickCaptureClipboardEnabled { get => QuickCapture.QuickCaptureClipboardEnabled; set => QuickCapture.QuickCaptureClipboardEnabled = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureImageClipboardEnabled"/>
-    public bool QuickCaptureImageClipboardEnabled { get => QuickCapture.QuickCaptureImageClipboardEnabled; set => QuickCapture.QuickCaptureImageClipboardEnabled = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureRecentLimit"/>
-    public int QuickCaptureRecentLimit { get => QuickCapture.QuickCaptureRecentLimit; set => QuickCapture.QuickCaptureRecentLimit = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureShowCreatedTime"/>
-    public bool QuickCaptureShowCreatedTime { get => QuickCapture.QuickCaptureShowCreatedTime; set => QuickCapture.QuickCaptureShowCreatedTime = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureItemPreviewLineCount"/>
-    public int QuickCaptureItemPreviewLineCount { get => QuickCapture.QuickCaptureItemPreviewLineCount; set => QuickCapture.QuickCaptureItemPreviewLineCount = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureListTextSize"/>
-    public double QuickCaptureListTextSize { get => QuickCapture.QuickCaptureListTextSize; set => QuickCapture.QuickCaptureListTextSize = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureContentTextSize"/>
-    public double QuickCaptureContentTextSize { get => QuickCapture.QuickCaptureContentTextSize; set => QuickCapture.QuickCaptureContentTextSize = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureEditorEnterBehavior"/>
-    public string QuickCaptureEditorEnterBehavior { get => QuickCapture.QuickCaptureEditorEnterBehavior; set => QuickCapture.QuickCaptureEditorEnterBehavior = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureDefaultFormat"/>
-    public string QuickCaptureDefaultFormat { get => QuickCapture.QuickCaptureDefaultFormat; set => QuickCapture.QuickCaptureDefaultFormat = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureWideLayout"/>
-    public string QuickCaptureWideLayout { get => QuickCapture.QuickCaptureWideLayout; set => QuickCapture.QuickCaptureWideLayout = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureWideOpenMode"/>
-    public string QuickCaptureWideOpenMode { get => QuickCapture.QuickCaptureWideOpenMode; set => QuickCapture.QuickCaptureWideOpenMode = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureAllowRemoteImages"/>
-    public bool QuickCaptureAllowRemoteImages { get => QuickCapture.QuickCaptureAllowRemoteImages; set => QuickCapture.QuickCaptureAllowRemoteImages = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.AttachmentStorageMode"/>
-    public string AttachmentStorageMode { get => QuickCapture.AttachmentStorageMode; set => QuickCapture.AttachmentStorageMode = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureDefaultView"/>
-    public string QuickCaptureDefaultView { get => QuickCapture.QuickCaptureDefaultView; set => QuickCapture.QuickCaptureDefaultView = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureTabStyle"/>
-    public string QuickCaptureTabStyle { get => QuickCapture.QuickCaptureTabStyle; set => QuickCapture.QuickCaptureTabStyle = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureShowTabBar"/>
-    public bool QuickCaptureShowTabBar { get => QuickCapture.QuickCaptureShowTabBar; set => QuickCapture.QuickCaptureShowTabBar = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureShowRecordsTab"/>
-    public bool QuickCaptureShowRecordsTab { get => QuickCapture.QuickCaptureShowRecordsTab; set => QuickCapture.QuickCaptureShowRecordsTab = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureShowPinnedTab"/>
-    public bool QuickCaptureShowPinnedTab { get => QuickCapture.QuickCaptureShowPinnedTab; set => QuickCapture.QuickCaptureShowPinnedTab = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.QuickCaptureShowRecentTab"/>
-    public bool QuickCaptureShowRecentTab { get => QuickCapture.QuickCaptureShowRecentTab; set => QuickCapture.QuickCaptureShowRecentTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoNewTaskPosition"/>
-    public string TodoNewTaskPosition { get => Todo.TodoNewTaskPosition; set => Todo.TodoNewTaskPosition = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoTabStyle"/>
-    public string TodoTabStyle { get => Todo.TodoTabStyle; set => Todo.TodoTabStyle = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowTabBar"/>
-    public bool TodoShowTabBar { get => Todo.TodoShowTabBar; set => Todo.TodoShowTabBar = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowAllTab"/>
-    public bool TodoShowAllTab { get => Todo.TodoShowAllTab; set => Todo.TodoShowAllTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowActiveTab"/>
-    public bool TodoShowActiveTab { get => Todo.TodoShowActiveTab; set => Todo.TodoShowActiveTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowTodayTab"/>
-    public bool TodoShowTodayTab { get => Todo.TodoShowTodayTab; set => Todo.TodoShowTodayTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowThisWeekTab"/>
-    public bool TodoShowThisWeekTab { get => Todo.TodoShowThisWeekTab; set => Todo.TodoShowThisWeekTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowThisMonthTab"/>
-    public bool TodoShowThisMonthTab { get => Todo.TodoShowThisMonthTab; set => Todo.TodoShowThisMonthTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowImportantTab"/>
-    public bool TodoShowImportantTab { get => Todo.TodoShowImportantTab; set => Todo.TodoShowImportantTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowCompletedTab"/>
-    public bool TodoShowCompletedTab { get => Todo.TodoShowCompletedTab; set => Todo.TodoShowCompletedTab = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoDefaultFilter"/>
-    public string TodoDefaultFilter { get => Todo.TodoDefaultFilter; set => Todo.TodoDefaultFilter = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowCompletedTasks"/>
-    public bool TodoShowCompletedTasks { get => Todo.TodoShowCompletedTasks; set => Todo.TodoShowCompletedTasks = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoItemPreviewLineCount"/>
-    public int TodoItemPreviewLineCount { get => Todo.TodoItemPreviewLineCount; set => Todo.TodoItemPreviewLineCount = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoListTextSize"/>
-    public double TodoListTextSize { get => Todo.TodoListTextSize; set => Todo.TodoListTextSize = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoContentTextSize"/>
-    public double TodoContentTextSize { get => Todo.TodoContentTextSize; set => Todo.TodoContentTextSize = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoEditorEnterBehavior"/>
-    public string TodoEditorEnterBehavior { get => Todo.TodoEditorEnterBehavior; set => Todo.TodoEditorEnterBehavior = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowFooterStats"/>
-    public bool TodoShowFooterStats { get => Todo.TodoShowFooterStats; set => Todo.TodoShowFooterStats = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoShowClearCompletedButton"/>
-    public bool TodoShowClearCompletedButton { get => Todo.TodoShowClearCompletedButton; set => Todo.TodoShowClearCompletedButton = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoReminderEnabled"/>
-    public bool TodoReminderEnabled { get => Todo.TodoReminderEnabled; set => Todo.TodoReminderEnabled = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoDefaultReminderOffsetMinutes"/>
-    public int TodoDefaultReminderOffsetMinutes { get => Todo.TodoDefaultReminderOffsetMinutes; set => Todo.TodoDefaultReminderOffsetMinutes = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoUseWideDetailPane"/>
-    public bool TodoUseWideDetailPane { get => Todo.TodoUseWideDetailPane; set => Todo.TodoUseWideDetailPane = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoLayoutMode"/>
-    public string TodoLayoutMode { get => Todo.TodoLayoutMode; set => Todo.TodoLayoutMode = value; }
-
-    /// <inheritdoc cref="TodoSettingsSlice.TodoAutoSelectFirstInWideLayout"/>
-    public bool TodoAutoSelectFirstInWideLayout { get => Todo.TodoAutoSelectFirstInWideLayout; set => Todo.TodoAutoSelectFirstInWideLayout = value; }
-
-    /// <inheritdoc cref="MusicSettingsSlice.MusicUseArtworkBackdrop"/>
-    public bool MusicUseArtworkBackdrop { get => Music.MusicUseArtworkBackdrop; set => Music.MusicUseArtworkBackdrop = value; }
-
-    /// <inheritdoc cref="MusicSettingsSlice.MusicEnableCoverHoverMotion"/>
-    public bool MusicEnableCoverHoverMotion { get => Music.MusicEnableCoverHoverMotion; set => Music.MusicEnableCoverHoverMotion = value; }
-
-    /// <inheritdoc cref="MusicSettingsSlice.MusicDisplayMode"/>
-    public string MusicDisplayMode { get => Music.MusicDisplayMode; set => Music.MusicDisplayMode = value; }
-
-    /// <inheritdoc cref="MusicSettingsSlice.MusicHideTimelineWhenUnavailable"/>
-    public bool MusicHideTimelineWhenUnavailable { get => Music.MusicHideTimelineWhenUnavailable; set => Music.MusicHideTimelineWhenUnavailable = value; }
-
-    /// <inheritdoc cref="QuickCaptureSettingsSlice.LastQuickCaptureFileWidgetId"/>
-    public string LastQuickCaptureFileWidgetId { get => QuickCapture.LastQuickCaptureFileWidgetId; set => QuickCapture.LastQuickCaptureFileWidgetId = value; }
 
     /// <inheritdoc cref="CoreSettingsSlice.GlobalHotkeyEnabled"/>
     public bool GlobalHotkeyEnabled { get => Core.GlobalHotkeyEnabled; set => Core.GlobalHotkeyEnabled = value; }
@@ -680,114 +497,11 @@ public class AppSettings
     /// <inheritdoc cref="WidgetLayoutSettingsSlice.DeletedWidgetIds"/>
     public List<string> DeletedWidgetIds { get => WidgetLayout.DeletedWidgetIds; set => WidgetLayout.DeletedWidgetIds = value; }
 
-    // ─── Weather Widget Settings ───────────────────────────────────
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherAutoLocation"/>
-    public bool WeatherAutoLocation { get => Weather.WeatherAutoLocation; set => Weather.WeatherAutoLocation = value; }
+    // 鈹€鈹€鈹€ Weather Widget Settings 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherCityName"/>
-    public string WeatherCityName { get => Weather.WeatherCityName; set => Weather.WeatherCityName = value; }
+    // 鈹€鈹€鈹€ Search Settings 鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€鈹€
 
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherLatitude"/>
-    public double WeatherLatitude { get => Weather.WeatherLatitude; set => Weather.WeatherLatitude = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherLongitude"/>
-    public double WeatherLongitude { get => Weather.WeatherLongitude; set => Weather.WeatherLongitude = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherTemperatureUnit"/>
-    public string WeatherTemperatureUnit { get => Weather.WeatherTemperatureUnit; set => Weather.WeatherTemperatureUnit = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherWindSpeedUnit"/>
-    public string WeatherWindSpeedUnit { get => Weather.WeatherWindSpeedUnit; set => Weather.WeatherWindSpeedUnit = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherDataSource"/>
-    public string WeatherDataSource { get => Weather.WeatherDataSource; set => Weather.WeatherDataSource = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherDefaultView"/>
-    public string WeatherDefaultView { get => Weather.WeatherDefaultView; set => Weather.WeatherDefaultView = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherSkin"/>
-    public string WeatherSkin { get => Weather.WeatherSkin; set => Weather.WeatherSkin = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherIconStyle"/>
-    public string WeatherIconStyle { get => Weather.WeatherIconStyle; set => Weather.WeatherIconStyle = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowForecast"/>
-    public bool WeatherShowForecast { get => Weather.WeatherShowForecast; set => Weather.WeatherShowForecast = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowSunrise"/>
-    public bool WeatherShowSunrise { get => Weather.WeatherShowSunrise; set => Weather.WeatherShowSunrise = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowUvIndex"/>
-    public bool WeatherShowUvIndex { get => Weather.WeatherShowUvIndex; set => Weather.WeatherShowUvIndex = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowPrecipitation"/>
-    public bool WeatherShowPrecipitation { get => Weather.WeatherShowPrecipitation; set => Weather.WeatherShowPrecipitation = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowHumidity"/>
-    public bool WeatherShowHumidity { get => Weather.WeatherShowHumidity; set => Weather.WeatherShowHumidity = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowWind"/>
-    public bool WeatherShowWind { get => Weather.WeatherShowWind; set => Weather.WeatherShowWind = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherShowPressure"/>
-    public bool WeatherShowPressure { get => Weather.WeatherShowPressure; set => Weather.WeatherShowPressure = value; }
-
-    /// <inheritdoc cref="WeatherSettingsSlice.WeatherRefreshIntervalMinutes"/>
-    public int WeatherRefreshIntervalMinutes { get => Weather.WeatherRefreshIntervalMinutes; set => Weather.WeatherRefreshIntervalMinutes = value; }
-
-    // ─── Search Settings ───────────────────────────────────────────────
-    /// <inheritdoc cref="SearchSettingsSlice.SearchHotkeyEnabled"/>
-    public bool SearchHotkeyEnabled { get => Search.SearchHotkeyEnabled; set => Search.SearchHotkeyEnabled = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchHotkeyModifiers"/>
-    public int SearchHotkeyModifiers { get => Search.SearchHotkeyModifiers; set => Search.SearchHotkeyModifiers = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchHotkeyKey"/>
-    public int SearchHotkeyKey { get => Search.SearchHotkeyKey; set => Search.SearchHotkeyKey = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchDisplayMode"/>
-    public string SearchDisplayMode { get => Search.SearchDisplayMode; set => Search.SearchDisplayMode = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchIncludeDeskBoxContent"/>
-    public bool SearchIncludeDeskBoxContent { get => Search.SearchIncludeDeskBoxContent; set => Search.SearchIncludeDeskBoxContent = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchEverythingEnabled"/>
-    public bool SearchEverythingEnabled { get => Search.SearchEverythingEnabled; set => Search.SearchEverythingEnabled = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchEverythingExecutablePath"/>
-    public string SearchEverythingExecutablePath { get => Search.SearchEverythingExecutablePath; set => Search.SearchEverythingExecutablePath = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchEverythingAdvancedSyntaxEnabled"/>
-    public bool SearchEverythingAdvancedSyntaxEnabled { get => Search.SearchEverythingAdvancedSyntaxEnabled; set => Search.SearchEverythingAdvancedSyntaxEnabled = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchShowRecommendations"/>
-    public bool SearchShowRecommendations { get => Search.SearchShowRecommendations; set => Search.SearchShowRecommendations = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchSaveHistory"/>
-    public bool SearchSaveHistory { get => Search.SearchSaveHistory; set => Search.SearchSaveHistory = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchMaxResults"/>
-    public int SearchMaxResults { get => Search.SearchMaxResults; set => Search.SearchMaxResults = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchDefaultTab"/>
-    public string SearchDefaultTab { get => Search.SearchDefaultTab; set => Search.SearchDefaultTab = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchAppIconAnimation"/>
-    public int SearchAppIconAnimation { get => Search.SearchAppIconAnimation; set => Search.SearchAppIconAnimation = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchPopupCustomX"/>
-    public int? SearchPopupCustomX { get => Search.SearchPopupCustomX; set => Search.SearchPopupCustomX = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchPopupCustomY"/>
-    public int? SearchPopupCustomY { get => Search.SearchPopupCustomY; set => Search.SearchPopupCustomY = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchPopupCustomWidth"/>
-    public int? SearchPopupCustomWidth { get => Search.SearchPopupCustomWidth; set => Search.SearchPopupCustomWidth = value; }
-
-    /// <inheritdoc cref="SearchSettingsSlice.SearchPopupCustomHeight"/>
-    public int? SearchPopupCustomHeight { get => Search.SearchPopupCustomHeight; set => Search.SearchPopupCustomHeight = value; }
-
-    // ─── Cloud Backup (roadmap §10 — non-secret provider config only) ───
+    // 鈹€鈹€鈹€ Cloud Backup (roadmap 搂10 鈥?non-secret provider config only) 鈹€鈹€鈹€
 
     /// <inheritdoc cref="CloudBackupSettingsSlice.CloudBackupProvider"/>
     public string CloudBackupProvider { get => CloudBackup.CloudBackupProvider; set => CloudBackup.CloudBackupProvider = value; }
@@ -800,12 +514,6 @@ public class AppSettings
 
     /// <inheritdoc cref="CloudBackupSettingsSlice.CloudBackupUsername"/>
     public string CloudBackupUsername { get => CloudBackup.CloudBackupUsername; set => CloudBackup.CloudBackupUsername = value; }
-
-    /// <inheritdoc cref="CloudBackupSettingsSlice.CloudBackupTodoDataEnabled"/>
-    public bool CloudBackupTodoDataEnabled { get => CloudBackup.CloudBackupTodoDataEnabled; set => CloudBackup.CloudBackupTodoDataEnabled = value; }
-
-    /// <inheritdoc cref="CloudBackupSettingsSlice.CloudBackupQuickCaptureDataEnabled"/>
-    public bool CloudBackupQuickCaptureDataEnabled { get => CloudBackup.CloudBackupQuickCaptureDataEnabled; set => CloudBackup.CloudBackupQuickCaptureDataEnabled = value; }
 
     /// <inheritdoc cref="CloudBackupSettingsSlice.CloudBackupWidgetStyleEnabled"/>
     public bool CloudBackupWidgetStyleEnabled { get => CloudBackup.CloudBackupWidgetStyleEnabled; set => CloudBackup.CloudBackupWidgetStyleEnabled = value; }

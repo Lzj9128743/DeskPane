@@ -6,25 +6,12 @@ namespace DeskBox.Tests;
 public sealed class WidgetChromeModeResolverTests
 {
     [Fact]
-    public void Resolve_UsesDisplayGlobalDefaultForMusic()
-    {
-        var settingsService = new SettingsService();
-        settingsService.Settings.DisplayWidgetChromeMode = SettingsService.WidgetChromeModeHidden;
-        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.Music);
-        var config = new WidgetConfig { WidgetKind = WidgetKind.Music };
-
-        var mode = new WidgetChromeModeResolver(settingsService).Resolve(config, descriptor);
-
-        Assert.Equal(WidgetChromeMode.Hidden, mode);
-    }
-
-    [Fact]
-    public void Resolve_UsesInteractiveGlobalDefaultForTodo()
+    public void Resolve_UsesInteractiveGlobalDefaultForFile()
     {
         var settingsService = new SettingsService();
         settingsService.Settings.InteractiveWidgetChromeMode = SettingsService.WidgetChromeModeCompact;
-        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.Todo);
-        var config = new WidgetConfig { WidgetKind = WidgetKind.Todo };
+        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.File);
+        var config = new WidgetConfig { WidgetKind = WidgetKind.File };
 
         var mode = new WidgetChromeModeResolver(settingsService).Resolve(config, descriptor);
 
@@ -35,9 +22,9 @@ public sealed class WidgetChromeModeResolverTests
     public void Resolve_InstanceOverrideWinsOverGlobalDefault()
     {
         var settingsService = new SettingsService();
-        settingsService.Settings.DisplayWidgetChromeMode = SettingsService.WidgetChromeModeOverlay;
-        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.Music);
-        var config = new WidgetConfig { WidgetKind = WidgetKind.Music };
+        settingsService.Settings.InteractiveWidgetChromeMode = SettingsService.WidgetChromeModeOverlay;
+        var descriptor = TestServices.CreateWidgetContentFactory().GetDescriptor(WidgetKind.File);
+        var config = new WidgetConfig { WidgetKind = WidgetKind.File };
         WidgetChromeModeNames.SetOverrideMode(config, WidgetChromeMode.Standard);
 
         var mode = new WidgetChromeModeResolver(settingsService).Resolve(config, descriptor);
@@ -48,7 +35,7 @@ public sealed class WidgetChromeModeResolverTests
     [Fact]
     public void SetOverrideMode_SystemRemovesMetadata()
     {
-        var config = new WidgetConfig { WidgetKind = WidgetKind.Todo };
+        var config = new WidgetConfig { WidgetKind = WidgetKind.File };
         WidgetChromeModeNames.SetOverrideMode(config, WidgetChromeMode.Hidden);
 
         WidgetChromeModeNames.SetOverrideMode(config, WidgetChromeMode.System);

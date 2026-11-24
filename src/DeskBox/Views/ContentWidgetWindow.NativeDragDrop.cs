@@ -231,8 +231,6 @@ public sealed partial class ContentWidgetWindow
             {
                 SuppressesNativeShellDragVisual: false
             } => true,
-            QuickCaptureWidgetContentAdapter => true,
-            TodoWidgetContentAdapter => true,
             _ => false
         };
     }
@@ -260,22 +258,6 @@ public sealed partial class ContentWidgetWindow
         if (effect == NativeDropEffectPolicy.None)
         {
             return null;
-        }
-
-        if (CurrentContent is QuickCaptureWidgetContentAdapter)
-        {
-            return new NativeDropDescriptionText(
-                "%1",
-                App.Current.LocalizationService.T(
-                    "Widget.Compact.QuickCaptureDropHint"));
-        }
-
-        if (CurrentContent is TodoWidgetContentAdapter)
-        {
-            return new NativeDropDescriptionText(
-                "%1",
-                App.Current.LocalizationService.T(
-                    "Widget.Compact.TodoDropHint"));
         }
 
         if (CurrentContent is FileWidgetContentAdapter &&
@@ -1781,26 +1763,6 @@ public sealed partial class ContentWidgetWindow
                         screenX,
                         screenY,
                         allowedEffects);
-                    break;
-
-                case QuickCaptureWidgetContentAdapter quickCapture:
-                    await quickCapture.ImportNativeDroppedFilesAsync(
-                        CreateNativeDroppedFilePaths(
-                            paths,
-                            containsTemporaryFiles),
-                        FindNativeDropDataContext<QuickCaptureItemViewModel>(
-                            screenX,
-                            screenY));
-                    break;
-
-                case TodoWidgetContentAdapter todo:
-                    await todo.ImportNativeDroppedFilesAsync(
-                        CreateNativeDroppedFilePaths(
-                            paths,
-                            containsTemporaryFiles),
-                        FindNativeDropDataContext<TodoItemViewModel>(
-                            screenX,
-                            screenY));
                     break;
 
                 default:

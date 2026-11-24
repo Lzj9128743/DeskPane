@@ -79,7 +79,6 @@ public static class JumpListService
 
             AddItem(jumpList, localization.T("JumpList.ToggleWidgets"), ArgToggleWidgets);
             AddItem(jumpList, localization.T("JumpList.NewFolderWidget"), ArgNewFolderWidget);
-            AddItem(jumpList, localization.T("JumpList.OpenSettings"), ArgOpenSettings);
             AddItem(jumpList, localization.T("JumpList.OpenStorage"), ArgOpenStorage);
 
             await jumpList.SaveAsync();

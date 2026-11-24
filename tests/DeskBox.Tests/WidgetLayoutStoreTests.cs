@@ -38,7 +38,7 @@ public sealed class WidgetLayoutStoreTests : IDisposable
     private static WidgetLayoutSettingsSlice CreateSeed(string widgetId, int groupCount = 0) =>
         new()
         {
-            Widgets = [new WidgetConfig { Id = widgetId, WidgetKind = WidgetKind.Todo }],
+            Widgets = [new WidgetConfig { Id = widgetId, WidgetKind = WidgetKind.File }],
             WidgetGroups = Enumerable
                 .Range(0, groupCount)
                 .Select(_ => new WidgetGroupConfig())
@@ -281,7 +281,7 @@ public sealed class WidgetLayoutStoreTests : IDisposable
     public async Task SettingsService_AdoptsLayout_ThenStripsKeysOnSave()
     {
         var settings = new AppSettings();
-        settings.Widgets.Add(new WidgetConfig { Id = "w1", WidgetKind = WidgetKind.Todo });
+        settings.Widgets.Add(new WidgetConfig { Id = "w1", WidgetKind = WidgetKind.File });
         settings.FeatureWidgetEnabledStates["Todo"] = true;
         Directory.CreateDirectory(_tempRoot);
         await File.WriteAllTextAsync(
@@ -332,7 +332,7 @@ public sealed class WidgetLayoutStoreTests : IDisposable
         // The layout path is a directory → the adoption write always fails.
         Directory.CreateDirectory(LayoutPath);
         var settings = new AppSettings();
-        settings.Widgets.Add(new WidgetConfig { Id = "w1", WidgetKind = WidgetKind.Todo });
+        settings.Widgets.Add(new WidgetConfig { Id = "w1", WidgetKind = WidgetKind.File });
         Directory.CreateDirectory(_tempRoot);
         await File.WriteAllTextAsync(
             SettingsPath,
@@ -387,7 +387,7 @@ public sealed class WidgetLayoutStoreTests : IDisposable
         File.Delete(LayoutPath);
         Directory.CreateDirectory(LayoutPath);
 
-        service.Settings.Widgets.Add(new WidgetConfig { Id = "survivor", WidgetKind = WidgetKind.Todo });
+        service.Settings.Widgets.Add(new WidgetConfig { Id = "survivor", WidgetKind = WidgetKind.File });
         bool saved = await service.SaveCheckedAsync(notifySubscribers: false);
 
         Assert.False(saved);
@@ -402,7 +402,7 @@ public sealed class WidgetLayoutStoreTests : IDisposable
         // commit — pending, data stays in settings.json.
         Directory.CreateDirectory(LayoutPath);
         var settings = new AppSettings();
-        settings.Widgets.Add(new WidgetConfig { Id = "retry", WidgetKind = WidgetKind.Todo });
+        settings.Widgets.Add(new WidgetConfig { Id = "retry", WidgetKind = WidgetKind.File });
         await File.WriteAllTextAsync(
             SettingsPath,
             JsonSerializer.Serialize(settings, SettingsJsonContext.Default.AppSettings));

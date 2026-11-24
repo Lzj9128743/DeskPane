@@ -43,8 +43,7 @@ public sealed class DesktopAutoOrganizationWatcherDeferredStartTests : IDisposab
             settingsService,
             fileService,
             organizer,
-            new ThemeService(settingsService),
-            new QuickCaptureService(new QuickCaptureStore(Path.Combine(_root, "quick-capture"))),
+            new ThemeService(settingsService))),
             () => desktopPath,
             recycleManagedFolderDeletes: false);
 

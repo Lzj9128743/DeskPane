@@ -51,37 +51,6 @@ public sealed class CoreSettingsSlice
     /// </summary>
     public bool SilentStartup { get; set; }
 
-    /// <summary>Whether DeskBox should check for updates in the background.</summary>
-    public bool AutoCheckForUpdates { get; set; } = true;
-
-    /// <summary>Last time DeskBox successfully attempted an update check.</summary>
-    public DateTimeOffset? LastUpdateCheckAt { get; set; }
-
-    /// <summary>
-    /// Whether the release-notes window opens once after DeskBox runs a new
-    /// version for the first time (update installed, or a manual install over
-    /// an older copy).
-    /// </summary>
-    public bool ShowReleaseNotesAfterUpdate { get; set; } = true;
-
-    /// <summary>
-    /// Version observed on the previous run. A mismatch against the current
-    /// version on the next interactive launch triggers the release-notes
-    /// window; it is stamped unconditionally once observed so a suppressed or
-    /// failed showing never repeats on every launch.
-    /// </summary>
-    public string? LastRunVersion { get; set; }
-
-    /// <summary>
-    /// Whether a discovered update is downloaded in the background (direct
-    /// channel only). Installation itself always waits for the user; metered
-    /// connections are skipped by the download trigger.
-    /// </summary>
-    public bool AutoDownloadUpdates { get; set; } = true;
-
-    /// <summary>Whether the update-available toast notifications are shown.</summary>
-    public bool ShowUpdateToastNotification { get; set; } = true;
-
     /// <summary>Whether the global hotkey is enabled.</summary>
     public bool GlobalHotkeyEnabled { get; set; } = true;
 
@@ -96,7 +65,7 @@ public sealed class CoreSettingsSlice
     public int GlobalHotkeyKey { get; set; } = (int)Windows.System.VirtualKey.F7;
 
     /// <summary>Whether double-clicking blank desktop space toggles all widgets.</summary>
-    public bool DesktopDoubleClickEnabled { get; set; }
+    public bool DesktopDoubleClickEnabled { get; set; } = true;
 
     /// <summary>Whether the first-run onboarding has been completed or skipped.</summary>
     public bool HasCompletedOnboarding { get; set; }

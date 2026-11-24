@@ -11,7 +11,6 @@ public sealed class WidgetManagerStorageCleanupTests : IDisposable
     private readonly string _storageRoot;
     private readonly string _desktopRoot;
     private readonly SettingsService _settingsService;
-    private readonly SearchFeatureSettingsStub _searchSettings;
     private readonly WidgetManager _widgetManager;
 
     public WidgetManagerStorageCleanupTests()
@@ -22,7 +21,6 @@ public sealed class WidgetManagerStorageCleanupTests : IDisposable
 
         _settingsService = new SettingsService(Path.Combine(_tempRoot, "settings"));
         _settingsService.Settings.DefaultManagedStorageRootPath = _storageRoot;
-        _searchSettings = new SearchFeatureSettingsStub(_settingsService);
 
         var fileService = new FileService();
         var organizerService = TestOrganizerServices.Create(_settingsService, fileService);
@@ -32,11 +30,9 @@ public sealed class WidgetManagerStorageCleanupTests : IDisposable
             fileService,
             organizerService,
             themeService,
-            new QuickCaptureService(new QuickCaptureStore(Path.Combine(_tempRoot, "quick-capture"))),
             localizationService: null,
             desktopPathProvider: () => _desktopRoot,
-            recycleManagedFolderDeletes: false,
-            searchFeatureSettings: _searchSettings);
+            recycleManagedFolderDeletes: false);
     }
 
     [Fact]
@@ -245,82 +241,20 @@ public sealed class WidgetManagerStorageCleanupTests : IDisposable
     }
 
     [Fact]
-    public async Task RestoreWidgetsAsync_SkipsFutureContentWidgetsWhileRegistryIsClosed()
+    public async Task RestoreWidgetsAsync_SkipsUnsupportedWidgets()
     {
         _settingsService.Settings.Widgets.Add(new WidgetConfig
         {
-            Id = "tags-hidden",
-            Name = "Tags",
-            WidgetKind = WidgetKind.Tags,
+            Id = "unsupported-hidden",
+            Name = "Unsupported",
+            WidgetKind = WidgetKind.Unsupported,
             IsVisible = true
         });
 
         await _widgetManager.RestoreWidgetsAsync();
 
         Assert.Empty(_widgetManager.ContentWidgets);
-        Assert.False(WidgetRegistry.Default.CanCreateWindow(WidgetKind.Tags));
-    }
-
-    [Fact]
-    public void RepairLegacyContentFeatureFileShells_RemovesOnlyEmptyMusicFileShells()
-    {
-        var musicConfig = new WidgetConfig
-        {
-            Id = "music-real",
-            Name = "Music",
-            WidgetKind = WidgetKind.Music,
-            IsVisible = true
-        };
-        var legacyShell = new WidgetConfig
-        {
-            Id = "music-shell",
-            Name = "\u97F3\u4E50",
-            WidgetKind = WidgetKind.File,
-            IsVisible = true
-        };
-        var userFileWidget = new WidgetConfig
-        {
-            Id = "music-user-file",
-            Name = "Music",
-            WidgetKind = WidgetKind.File,
-            MappedFolderPath = _desktopRoot,
-            IsVisible = true
-        };
-        FeatureWidgetSettings.SetEnabled(_settingsService.Settings, WidgetKind.Music, true);
-        _settingsService.Settings.Widgets.Add(musicConfig);
-        _settingsService.Settings.Widgets.Add(legacyShell);
-        _settingsService.Settings.Widgets.Add(userFileWidget);
-
-        int repaired = _widgetManager.RepairLegacyContentFeatureFileShells();
-
-        Assert.Equal(1, repaired);
-        Assert.DoesNotContain(_settingsService.Settings.Widgets, widget => widget.Id == legacyShell.Id);
-        Assert.Contains(_settingsService.Settings.Widgets, widget => widget.Id == musicConfig.Id);
-        Assert.Contains(_settingsService.Settings.Widgets, widget => widget.Id == userFileWidget.Id);
-        Assert.Contains(legacyShell.Id, _settingsService.Settings.DeletedWidgetIds);
-    }
-
-    [Fact]
-    public async Task CreateWidgetFromConfigAsync_RejectsContentFeatureConfigBeforeMutatingKind()
-    {
-        var musicConfig = new WidgetConfig
-        {
-            Id = "music-window",
-            Name = "Music",
-            WidgetKind = WidgetKind.Music
-        };
-        var method = typeof(WidgetManager).GetMethod(
-            "CreateWidgetFromConfigAsync",
-            System.Reflection.BindingFlags.Instance | System.Reflection.BindingFlags.NonPublic);
-
-        Assert.NotNull(method);
-        var task = Assert.IsAssignableFrom<Task>(method!.Invoke(
-            _widgetManager,
-            [musicConfig, false, false, false]));
-
-        var exception = await Assert.ThrowsAsync<InvalidOperationException>(async () => await task);
-        Assert.Contains("File config", exception.Message);
-        Assert.Equal(WidgetKind.Music, musicConfig.WidgetKind);
+        Assert.False(WidgetRegistry.Default.CanCreateWindow(WidgetKind.Unsupported));
     }
 
     [Fact]
@@ -422,78 +356,6 @@ public sealed class WidgetManagerStorageCleanupTests : IDisposable
         Assert.Contains(widget.Id, _settingsService.Settings.DeletedWidgetIds);
         Assert.True(Directory.Exists(mappedFolder));
         Assert.Equal("mapped", File.ReadAllText(mappedFile));
-    }
-
-    [Fact]
-    public async Task RemoveWidgetAsync_SearchAwaitsRuntimeCommitBeforeFinishingDeletion()
-    {
-        var search = new WidgetConfig { Name = "Search", WidgetKind = WidgetKind.Search };
-        _settingsService.Settings.Widgets.Add(search);
-        FeatureWidgetSettings.SetEnabled(_settingsService.Settings, WidgetKind.Search, true);
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        _searchSettings.BeforeCommit = async _ =>
-        {
-            entered.TrySetResult();
-            await release.Task;
-        };
-
-        Task deletion = _widgetManager.RemoveWidgetAsync(search.Id);
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Assert.False(deletion.IsCompleted);
-        release.TrySetResult();
-        await deletion;
-
-        Assert.Equal(1, _searchSettings.CommitCount);
-        Assert.False(_searchSettings.Enabled);
-        Assert.DoesNotContain(_settingsService.Settings.Widgets, item => item.Id == search.Id);
-        Assert.Contains(search.Id, _settingsService.Settings.DeletedWidgetIds);
-        var reloaded = new SettingsService(Path.Combine(_tempRoot, "settings"));
-        Assert.False(FeatureWidgetSettings.IsEnabled(reloaded.Settings, WidgetKind.Search));
-        Assert.DoesNotContain(reloaded.Settings.Widgets, item => item.Id == search.Id);
-    }
-
-    [Fact]
-    public async Task TodoMenuToggle_AndSettingsToggle_UseTheSameTransitionOrder()
-    {
-        FeatureWidgetSettings.SetEnabled(_settingsService.Settings, WidgetKind.Todo, true);
-        var entered = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var release = new TaskCompletionSource(TaskCreationOptions.RunContinuationsAsynchronously);
-        var transitions = new List<bool>();
-        TodoSettingsCoordinator? coordinator = null;
-        coordinator = new TodoSettingsCoordinator(_settingsService, async enabled =>
-        {
-            transitions.Add(enabled);
-            coordinator!.CommitEnabledState(enabled);
-            if (!enabled)
-            {
-                entered.TrySetResult();
-                await release.Task;
-            }
-        });
-        var fileService = new FileService();
-        var manager = new WidgetManager(
-            _settingsService,
-            fileService,
-            TestOrganizerServices.Create(_settingsService, fileService),
-            new ThemeService(_settingsService),
-            new QuickCaptureService(new QuickCaptureStore(Path.Combine(_tempRoot, "todo-toggle-capture"))),
-            localizationService: null,
-            desktopPathProvider: () => _desktopRoot,
-            recycleManagedFolderDeletes: false,
-            todoSettings: coordinator);
-
-        Task menuDisable = manager.SetFeatureWidgetEnabledAsync(
-            WidgetKind.Todo, enabled: false, reveal: false);
-        await entered.Task.WaitAsync(TimeSpan.FromSeconds(10));
-        Task settingsEnable = coordinator.SetEnabledAsync(true);
-        Assert.False(settingsEnable.IsCompleted);
-        release.TrySetResult();
-        await Task.WhenAll(menuDisable, settingsEnable);
-
-        Assert.Equal([false, true], transitions);
-        Assert.True(FeatureWidgetSettings.IsEnabled(_settingsService.Settings, WidgetKind.Todo));
-        await coordinator.StopAsync();
     }
 
     [Fact]
@@ -972,28 +834,5 @@ public sealed class WidgetManagerStorageCleanupTests : IDisposable
         {
             Directory.Delete(_tempRoot, recursive: true);
         }
-    }
-
-    private sealed class SearchFeatureSettingsStub(SettingsService settings) : ISearchFeatureSettings
-    {
-        public bool Enabled => FeatureWidgetSettings.IsEnabled(settings.Settings, WidgetKind.Search);
-        public event Action? FeatureChanged { add { } remove { } }
-        public Func<bool, Task>? BeforeCommit { get; set; }
-        public int CommitCount { get; private set; }
-
-        public Task SetEnabledAsync(bool enabled, bool reveal = true,
-            CancellationToken cancellationToken = default) =>
-            CommitEnabledStateAsync(enabled, cancellationToken);
-
-        public async Task CommitEnabledStateAsync(bool enabled,
-            CancellationToken cancellationToken = default)
-        {
-            cancellationToken.ThrowIfCancellationRequested();
-            if (BeforeCommit is not null) await BeforeCommit(enabled);
-            FeatureWidgetSettings.SetEnabled(settings.Settings, WidgetKind.Search, enabled);
-            CommitCount++;
-        }
-
-        public Task StopAsync() => Task.CompletedTask;
     }
 }

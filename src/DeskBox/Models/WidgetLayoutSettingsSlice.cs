@@ -9,8 +9,6 @@ public sealed class WidgetLayoutSettingsSlice
     /// Enabled state for singleton feature widgets, keyed by <see cref="WidgetKind"/> name.
     /// Legacy boolean properties are still kept as compatibility mirrors.
     /// </summary>
-    public Dictionary<string, bool> FeatureWidgetEnabledStates { get; set; } = [];
-
     /// <summary>All configured widgets.</summary>
     public List<WidgetConfig> Widgets { get; set; } = [];
 
@@ -102,7 +100,6 @@ public sealed class WidgetLayoutSettingsSlice
     {
         ArgumentNullException.ThrowIfNull(other);
 
-        FeatureWidgetEnabledStates = other.FeatureWidgetEnabledStates;
         Widgets = other.Widgets;
         WidgetGroups = other.WidgetGroups;
         WidgetTopologyLayouts = other.WidgetTopologyLayouts;

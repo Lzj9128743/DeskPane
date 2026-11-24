@@ -79,7 +79,7 @@ internal sealed record HookWatchdogPolicy
     internal static HookWatchdogPolicy Default { get; } = new();
 
     /// <summary>Watchdog pass cadence; bounds detection latency.</summary>
-    internal TimeSpan TickInterval { get; init; } = TimeSpan.FromSeconds(5);
+    internal TimeSpan TickInterval { get; init; } = TimeSpan.FromSeconds(15);
 
     /// <summary>
     /// Divergence requires user input this recent (GetLastInputInfo): a

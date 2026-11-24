@@ -28,19 +28,8 @@ public sealed partial class WidgetManager
         _surfaceContentWindowFactory = new ContentWidgetWindowFactory(
             new WidgetContentFactory(_localizationService),
             _settingsService,
-            quickCaptureContentFactory: CreateQuickCaptureSurfaceContent,
             fileContentFactory: CreateFileSurfaceContent);
         return _surfaceContentWindowFactory;
-    }
-
-    private IWidgetContent CreateQuickCaptureSurfaceContent(WidgetConfig config)
-    {
-        return new QuickCaptureWidgetContentAdapter(
-            config,
-            _quickCaptureService,
-            _settingsService,
-            _localizationService,
-            DispatcherQueue.GetForCurrentThread());
     }
 
     private IWidgetContent CreateFileSurfaceContent(WidgetConfig config)

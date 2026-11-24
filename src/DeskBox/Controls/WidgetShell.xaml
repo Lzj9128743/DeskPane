@@ -737,28 +737,21 @@
                     Click="CompactPreviousButton_Click"
                     Style="{StaticResource WidgetTitleActionButtonStyle}"
                     Visibility="Collapsed">
-                    <widgetContents:MusicTransportIcon
-                        Foreground="{Binding Foreground, ElementName=CompactPreviousButton}"
-                        Kind="Previous" />
+                    <FontIcon FontSize="12" Glyph="&#xE892;" />
                 </Button>
                 <Button
                     x:Name="CompactPlayPauseButton"
                     Click="CompactPlayPauseButton_Click"
                     Style="{StaticResource WidgetTitleActionButtonStyle}"
                     Visibility="Collapsed">
-                    <widgetContents:MusicTransportIcon
-                        x:Name="CompactPlayPauseIcon"
-                        Foreground="{Binding Foreground, ElementName=CompactPlayPauseButton}"
-                        Kind="Play" />
+                    <FontIcon x:Name="CompactPlayPauseIcon" FontSize="12" Glyph="&#xE768;" />
                 </Button>
                 <Button
                     x:Name="CompactNextButton"
                     Click="CompactNextButton_Click"
                     Style="{StaticResource WidgetTitleActionButtonStyle}"
                     Visibility="Collapsed">
-                    <widgetContents:MusicTransportIcon
-                        Foreground="{Binding Foreground, ElementName=CompactNextButton}"
-                        Kind="Next" />
+                    <FontIcon FontSize="12" Glyph="&#xE893;" />
                 </Button>
                 <Button
                     x:Name="CompactExpandButton"

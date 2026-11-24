@@ -1096,7 +1096,7 @@ public sealed class DeskBoxDataBackupServiceTests : IDisposable
         // AFTER the safety net — every attempt fails deterministically.
         var slice = new WidgetLayoutSettingsSlice
         {
-            Widgets = [new WidgetConfig { Id = "w1", WidgetKind = WidgetKind.Todo }]
+            Widgets = [new WidgetConfig { Id = "w1", WidgetKind = WidgetKind.File }]
         };
         await File.WriteAllTextAsync(
             Path.Combine(dataDir, "widget-layout.json"),
