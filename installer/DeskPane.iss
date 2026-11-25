@@ -6,7 +6,7 @@
 ; ISCC /DDeskPaneNativeAot=1 /DDeskPaneBundledRuntime=1 /DMyAppReleaseDir=<publish 目录> DeskPane.iss
 
 #define MyAppName "DeskPane"
-#define MyAppVersion "1.5.9"
+#define MyAppVersion "0.1.0"
 #define MyAppVersionInfo "1.5.9.0"
 #define MyAppPublisher "朱天雨"
 #define MyAppExeName "DeskPane.exe"
