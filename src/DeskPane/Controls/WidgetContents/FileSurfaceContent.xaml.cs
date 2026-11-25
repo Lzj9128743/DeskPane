@@ -937,8 +937,16 @@ public sealed partial class FileSurfaceContent :
             return;
         }
 
-        if (sender is FrameworkElement fe && fe.DataContext is WidgetItem item &&
-            item is not WidgetStackItem && !string.IsNullOrWhiteSpace(item.Path))
+        WidgetItem? item = (sender as ContentControl)?.Content as WidgetItem
+            ?? (sender as FrameworkElement)?.DataContext as WidgetItem
+            ?? (sender is DependencyObject container &&
+                ItemsControl.ItemsControlFromItemContainer(container) is { } owner
+                    ? owner.ItemFromContainer(container) as WidgetItem
+                    : null);
+
+        if (item is not null &&
+            item is not WidgetStackItem &&
+            !string.IsNullOrWhiteSpace(item.Path))
         {
             _elevatedPointerDragArmed = true;
             _elevatedPointerDragStart = point.Position;

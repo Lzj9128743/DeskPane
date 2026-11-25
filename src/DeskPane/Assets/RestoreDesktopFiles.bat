@@ -5,7 +5,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 "$ErrorActionPreference='SilentlyContinue';" ^
 "Get-Process -Name 'DeskPane*' | Stop-Process -Force;" ^
 "$desktop = [Environment]::GetFolderPath('Desktop');" ^
-"$appData = Join-Path $env:LOCALAPPDATA 'DeskPane\data';" ^
+"$appData = Join-Path $env:LOCALAPPDATA 'DeskPane';" ^
 "$ledgerPath = Join-Path $appData 'staging-ledger.json';" ^
 "$stagingRoot = Join-Path $appData 'staging';" ^
 "$count = 0;" ^
