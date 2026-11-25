@@ -11,6 +11,7 @@
 
     <IsPackable>false</IsPackable>
     <IsTestProject>true</IsTestProject>
+    <WindowsAppSDKSelfContained>true</WindowsAppSDKSelfContained>
     <DeskPaneNativeTestPlatform Condition="'$(Platform)' == 'ARM64' Or '$(RuntimeIdentifier)' == 'win-arm64'">ARM64</DeskPaneNativeTestPlatform>
     <DeskPaneNativeTestPlatform Condition="'$(DeskPaneNativeTestPlatform)' == ''">x64</DeskPaneNativeTestPlatform>
     <DeskPaneRustCrtLinkage Condition="'$(DeskPaneRustCrtLinkage)' == ''">Static</DeskPaneRustCrtLinkage>
@@ -51,6 +52,7 @@
   <Target
     Name="BuildDeskPaneNativeTestModule"
     BeforeTargets="CoreCompile"
+    Condition="'$(DeskPaneRustNative)' == 'true'"
     Inputs="@(DeskPaneNativeTestInput)"
     Outputs="$(DeskPaneNativeTestDll);$(DeskPaneNativeTestPdb)">
     <Error
@@ -63,7 +65,8 @@
   <Target
     Name="CopyDeskPaneNativeTestModule"
     AfterTargets="Build"
-    DependsOnTargets="BuildDeskPaneNativeTestModule">
+    DependsOnTargets="BuildDeskPaneNativeTestModule"
+    Condition="'$(DeskPaneRustNative)' == 'true'">
     <Copy
       SourceFiles="$(DeskPaneNativeTestDll);$(DeskPaneNativeTestPdb)"
       DestinationFolder="$(OutDir)"
