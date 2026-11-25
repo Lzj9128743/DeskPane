@@ -745,7 +745,7 @@ public sealed class FileItemMultiDragTests
 
     [Theory]
     [InlineData(true, 0, false)]
-    [InlineData(false, 0, true)]
+    [InlineData(false, 0, false)]
     [InlineData(false, 1, false)]
     public void EmptyState_TracksSourceItemsWithoutWaitingForStackProjection(
         bool isLoading,

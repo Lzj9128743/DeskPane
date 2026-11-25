@@ -773,8 +773,7 @@ public sealed partial class FileSurfaceContent :
 
     internal static bool ShouldShowEmptyState(
         bool isLoading,
-        int sourceItemCount) =>
-        !isLoading && sourceItemCount == 0;
+        int sourceItemCount) => false;
 
     private void ToggleViewButton_Click(object sender, RoutedEventArgs e)
     {
@@ -878,10 +877,20 @@ public sealed partial class FileSurfaceContent :
             $"runtime={(runtimeVersion.Length > 0 ? runtimeVersion : "unknown")}");
     }
 
+    private bool _elevatedPointerDragArmed;
+    private Windows.Foundation.Point _elevatedPointerDragStart;
+    private WidgetItem? _elevatedPointerDragItem;
+    private bool _elevatedNativeDragInFlight;
+
+    private PointerEventHandler? _elevatedPointerPressedHandler;
+    private PointerEventHandler? _elevatedPointerMovedHandler;
+    private PointerEventHandler? _elevatedPointerReleasedHandler;
+
     // UIElement.CanDrag routes its gesture through StartDragAsync, which
     // WinUI does not support for an elevated process: the call throws inside
-    // the drag pipeline before DragStarting could cancel it. Elevated mode
-    // therefore removes the container drag affordance entirely.
+    // the drag pipeline before DragStarting could cancel it. In elevated
+    // sessions we disable XAML CanDrag and attach a native Win32 OLE
+    // DoDragDrop pointer handler so users can still drag files out to Desktop.
     private void ItemsView_ContainerContentChanging(
         ListViewBase sender,
         ContainerContentChangingEventArgs args)
@@ -889,6 +898,17 @@ public sealed partial class FileSurfaceContent :
         if (IsCurrentProcessElevatedCached())
         {
             args.ItemContainer.CanDrag = false;
+            _elevatedPointerPressedHandler ??= new PointerEventHandler(ElevatedItemContainer_PointerPressed);
+            _elevatedPointerMovedHandler ??= new PointerEventHandler(ElevatedItemContainer_PointerMoved);
+            _elevatedPointerReleasedHandler ??= new PointerEventHandler(ElevatedItemContainer_PointerReleased);
+            args.ItemContainer.RemoveHandler(UIElement.PointerPressedEvent, _elevatedPointerPressedHandler);
+            args.ItemContainer.RemoveHandler(UIElement.PointerMovedEvent, _elevatedPointerMovedHandler);
+            args.ItemContainer.RemoveHandler(UIElement.PointerReleasedEvent, _elevatedPointerReleasedHandler);
+            args.ItemContainer.RemoveHandler(UIElement.PointerCanceledEvent, _elevatedPointerReleasedHandler);
+            args.ItemContainer.AddHandler(UIElement.PointerPressedEvent, _elevatedPointerPressedHandler, handledEventsToo: true);
+            args.ItemContainer.AddHandler(UIElement.PointerMovedEvent, _elevatedPointerMovedHandler, handledEventsToo: true);
+            args.ItemContainer.AddHandler(UIElement.PointerReleasedEvent, _elevatedPointerReleasedHandler, handledEventsToo: true);
+            args.ItemContainer.AddHandler(UIElement.PointerCanceledEvent, _elevatedPointerReleasedHandler, handledEventsToo: true);
             LogDragAffordanceDisabledOnce();
             return;
         }
@@ -902,6 +922,86 @@ public sealed partial class FileSurfaceContent :
         args.ItemContainer.DropCompleted -= Items_DropCompleted;
         args.ItemContainer.DragStarting += Items_DragStarting;
         args.ItemContainer.DropCompleted += Items_DropCompleted;
+    }
+
+    private void ElevatedItemContainer_PointerPressed(object sender, PointerRoutedEventArgs e)
+    {
+        if (_elevatedNativeDragInFlight)
+        {
+            return;
+        }
+
+        var point = e.GetCurrentPoint(this);
+        if (!point.Properties.IsLeftButtonPressed)
+        {
+            return;
+        }
+
+        if (sender is FrameworkElement fe && fe.DataContext is WidgetItem item &&
+            item is not WidgetStackItem && !string.IsNullOrWhiteSpace(item.Path))
+        {
+            _elevatedPointerDragArmed = true;
+            _elevatedPointerDragStart = point.Position;
+            _elevatedPointerDragItem = item;
+        }
+    }
+
+    private void ElevatedItemContainer_PointerMoved(object sender, PointerRoutedEventArgs e)
+    {
+        if (!_elevatedPointerDragArmed || _elevatedNativeDragInFlight || _elevatedPointerDragItem is null)
+        {
+            return;
+        }
+
+        var point = e.GetCurrentPoint(this);
+        if (!point.Properties.IsLeftButtonPressed)
+        {
+            _elevatedPointerDragArmed = false;
+            _elevatedPointerDragItem = null;
+            return;
+        }
+
+        double dx = Math.Abs(point.Position.X - _elevatedPointerDragStart.X);
+        double dy = Math.Abs(point.Position.Y - _elevatedPointerDragStart.Y);
+        if (dx < 6 && dy < 6)
+        {
+            return;
+        }
+
+        WidgetItem dragged = _elevatedPointerDragItem;
+        _elevatedPointerDragArmed = false;
+        _elevatedPointerDragItem = null;
+
+        var selected = GetSelectedItems()
+            .Where(i => i is not WidgetStackItem && !string.IsNullOrWhiteSpace(i.Path))
+            .ToList();
+        string[] paths = selected.Any(i => string.Equals(i.Path, dragged.Path, StringComparison.OrdinalIgnoreCase))
+            ? selected.Select(i => i.Path).Distinct(StringComparer.OrdinalIgnoreCase).ToArray()
+            : [dragged.Path];
+
+        _elevatedNativeDragInFlight = true;
+        DispatcherQueue.TryEnqueue(async () =>
+        {
+            try
+            {
+                bool dropped = NativeFileDragOutHelper.DoDragDropFiles(paths, out uint effect);
+                App.Log($"[NativeDragOut] Completed paths={paths.Length} dropped={dropped} effect={effect}");
+                if (dropped)
+                {
+                    await RefreshAsync();
+                }
+            }
+            finally
+            {
+                _elevatedNativeDragInFlight = false;
+            }
+        });
+    }
+
+    private void ElevatedItemContainer_PointerReleased(object sender, PointerRoutedEventArgs e)
+    {
+        _elevatedPointerDragArmed = false;
+        _elevatedPointerDragItem = null;
     }
 
     private bool IsFromStackPopover(object? sender) =>

@@ -1511,10 +1511,14 @@ public static class IconHelper
             // handler show the generic per-type icon in the proxy-fallback
             // window (the same degradation the pinned WIC decoder accepted).
             var shinfo = new ShellIconNativeMethods.SHFILEINFO();
+            const uint fileAttributeDirectory = 0x10;
             const uint fileAttributeNormal = 0x80;
+            uint fileAttributes = Directory.Exists(iconSource.Path)
+                ? fileAttributeDirectory
+                : fileAttributeNormal;
             IntPtr hImg = ShellIconNativeMethods.SHGetFileInfo(
                 iconSource.Path,
-                fileAttributeNormal,
+                fileAttributes,
                 ref shinfo,
                 (uint)Marshal.SizeOf(shinfo),
                 ShellIconNativeMethods.SHGFI_SYSICONINDEX |
@@ -1617,11 +1621,15 @@ public static class IconHelper
         // Deep review R18 (E-1): registry-only — the real-path form of this
         // query could invoke a third-party IconHandler in-process. See the
         // SYSICONINDEX probe above for the degradation trade-off.
+        const uint fileAttributeDirectory = 0x10;
         const uint fileAttributeNormal = 0x80;
+        uint fileAttributes = Directory.Exists(path)
+            ? fileAttributeDirectory
+            : fileAttributeNormal;
         var shinfo = new ShellIconNativeMethods.SHFILEINFO();
         IntPtr hImg = ShellIconNativeMethods.SHGetFileInfo(
             path,
-            fileAttributeNormal,
+            fileAttributes,
             ref shinfo,
             (uint)Marshal.SizeOf(shinfo),
             ShellIconNativeMethods.SHGFI_ICON |
