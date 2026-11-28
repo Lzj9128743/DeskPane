@@ -26,7 +26,7 @@ powershell -NoProfile -ExecutionPolicy Bypass -Command ^
 "  }" ^
 "  Remove-Item -LiteralPath $ledgerPath -Force;" ^
 "}" ^
-"foreach ($root in @($stagingRoot, (Join-Path ([IO.Path]::GetPathRoot($desktop)) '.DeskPaneStaging'))) {" ^
+"foreach ($root in @((Join-Path $appData 'DeskPane 桌面格子'), $stagingRoot, (Join-Path ([IO.Path]::GetPathRoot($desktop)) 'DeskPane 桌面格子'), (Join-Path ([IO.Path]::GetPathRoot($desktop)) '.DeskPaneStaging'))) {" ^
 "  if (Test-Path -LiteralPath $root) {" ^
 "    foreach ($sub in Get-ChildItem -LiteralPath $root -Directory) {" ^
 "      foreach ($item in Get-ChildItem -LiteralPath $sub.FullName -Force) {" ^

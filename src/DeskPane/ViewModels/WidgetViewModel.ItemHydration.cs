@@ -17,8 +17,7 @@ public partial class WidgetViewModel
         if (Config.IsVirtualDesktopGroup)
         {
             Config.FollowsDefaultStoragePath = false;
-            Config.ManagedFolderName = null;
-            Config.MappedFolderPath = DesktopStagingService.GetWidgetStagingFolder(Config.Id);
+            Config.MappedFolderPath = DesktopStagingService.GetWidgetStagingFolder(Config);
             return;
         }
 

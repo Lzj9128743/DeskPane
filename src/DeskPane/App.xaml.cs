@@ -1215,6 +1215,7 @@ public partial class App : Application
             try
             {
                 DesktopStagingService.StageVirtualWidgetsOnStartup(SettingsService.Settings.Widgets);
+                _ = DesktopStagingService.PinStagingRootToQuickAccessAsync();
                 await widgetManager.RestoreWidgetsAsync();
             }
             catch (Exception ex)
@@ -5040,6 +5041,7 @@ public partial class App : Application
             ShutdownStep.Sync("widgets", () =>
             {
                 WidgetManager?.CloseAll();
+                DesktopStagingService.UnpinStagingRootFromQuickAccess();
                 DesktopStagingService.RestoreAllStagedFilesToDesktop(SettingsService.Settings.Widgets);
                 SettingsService.SaveDebounced(notifySubscribers: false);
                 if (DesktopIconVisibilityService.AreDesktopIconsVisible() == false)

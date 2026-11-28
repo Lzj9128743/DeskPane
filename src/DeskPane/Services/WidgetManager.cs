@@ -886,7 +886,7 @@ public sealed partial class WidgetManager
             Width = _settingsService.Settings.DefaultWidgetWidth,
             Height = _settingsService.Settings.DefaultWidgetHeight
         };
-        config.MappedFolderPath = DesktopStagingService.GetWidgetStagingFolder(config.Id);
+        config.MappedFolderPath = DesktopStagingService.GetWidgetStagingFolder(config);
 
         // Unified new-widget funnel (spec 5.8): resolves the target display
         // from the "新格子出现在" setting (cursor display by default), places
@@ -1874,7 +1874,11 @@ public sealed partial class WidgetManager
             return;
         }
 
-        if (config.FollowsDefaultStoragePath)
+        if (config.IsVirtualDesktopGroup)
+        {
+            DesktopStagingService.RenameWidgetStagingFolder(config, newName);
+        }
+        else if (config.FollowsDefaultStoragePath)
         {
             await RenameManagedWidgetFolderAsync(config, newName);
         }
