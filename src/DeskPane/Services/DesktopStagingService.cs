@@ -1,5 +1,6 @@
 // Copyright (c) DeskPane. All rights reserved.
 
+using System.Runtime.InteropServices;
 using System.Text;
 using System.Text.Json;
 using DeskPane.Helpers;
@@ -10,15 +11,24 @@ namespace DeskPane.Services;
 /// <summary>
 /// Manages same-volume staging folders for DeskPane virtual desktop groups:
 /// - While DeskPane is running, files placed in a virtual desktop box live in a
-///   hidden same-volume staging folder (%LocalAppData%\DeskPane\data\staging\&lt;widgetId&gt;\,
-///   or &lt;DesktopDrive&gt;\.DeskPaneStaging\&lt;widgetId&gt;\ if Desktop is on another drive).
+///   human-readable same-volume staging folder (%LocalAppData%\DeskPane\DeskPane 桌面格子\&lt;格子名&gt;\,
+///   or &lt;DesktopDrive&gt;\DeskPane 桌面格子\&lt;格子名&gt;\ if Desktop is on another drive).
 /// - Same-volume moves are instant NTFS metadata operations (0 ms, zero copy).
 /// - On DeskPane exit (or when a box is deleted), all staged items are moved
 ///   straight back to their original desktop paths and empty staging folders are removed.
 /// - A lightweight JSON ledger (staging-ledger.json) ensures crash/power-loss safety.
 /// </summary>
-public static class DesktopStagingService
+public static partial class DesktopStagingService
 {
+    private const uint ShcneUpdateItem = 0x00002000;
+    private const uint ShcnfPathW = 0x0005;
+
+    [LibraryImport("shell32.dll", StringMarshalling = StringMarshalling.Utf16)]
+    private static partial void SHChangeNotify(
+        uint wEventId,
+        uint uFlags,
+        string dwItem1,
+        IntPtr dwItem2);
     private static readonly object s_sync = new();
     private static readonly JsonSerializerOptions s_jsonOptions = new() { WriteIndented = true };
 
@@ -189,12 +199,56 @@ public static class DesktopStagingService
         try
         {
             string root = GetStagingRootPath();
+            ApplyAppIconToStagingRoot(root);
             var result = await ExplorerQuickAccessHelper.TryPinFolderToQuickAccessAsync(root);
             App.LogVerbose($"[DesktopStaging] QuickAccess pin '{root}' succeeded={result.Succeeded} error={result.Error}");
         }
         catch (Exception ex)
         {
             App.LogVerbose($"[DesktopStaging] QuickAccess pin failed: {ex.Message}");
+        }
+    }
+
+    private static void ApplyAppIconToStagingRoot(string folderPath)
+    {
+        try
+        {
+            string baseDir = AppContext.BaseDirectory;
+            string icoPath = Path.Combine(baseDir, "Assets", "deskpane.ico");
+            string iconSource = File.Exists(icoPath)
+                ? icoPath
+                : (Environment.ProcessPath ?? Path.Combine(baseDir, "DeskPane.exe"));
+            if (string.IsNullOrWhiteSpace(iconSource) || !File.Exists(iconSource))
+            {
+                return;
+            }
+
+            string iniPath = Path.Combine(folderPath, "desktop.ini");
+            if (File.Exists(iniPath))
+            {
+                File.SetAttributes(iniPath, FileAttributes.Normal);
+            }
+
+            string iniContent =
+                "[.ShellClassInfo]\r\n" +
+                $"IconResource={iconSource},0\r\n" +
+                $"IconFile={iconSource}\r\n" +
+                "IconIndex=0\r\n";
+            // Windows Explorer reads desktop.ini reliably with UTF-16 LE BOM for Unicode paths.
+            File.WriteAllText(iniPath, iniContent, Encoding.Unicode);
+            File.SetAttributes(iniPath, FileAttributes.Hidden | FileAttributes.System);
+
+            var dirInfo = new DirectoryInfo(folderPath);
+            if ((dirInfo.Attributes & FileAttributes.ReadOnly) == 0)
+            {
+                dirInfo.Attributes |= FileAttributes.ReadOnly;
+            }
+
+            SHChangeNotify(ShcneUpdateItem, ShcnfPathW, folderPath, IntPtr.Zero);
+        }
+        catch (Exception ex)
+        {
+            App.LogVerbose($"[DesktopStaging] ApplyAppIconToStagingRoot failed: {ex.Message}");
         }
     }
 
@@ -799,8 +853,28 @@ public static class DesktopStagingService
     {
         try
         {
-            if (Directory.Exists(path) && !Directory.EnumerateFileSystemEntries(path).Any())
+            if (!Directory.Exists(path))
             {
+                return;
+            }
+
+            string[] entries = Directory.GetFileSystemEntries(path);
+            bool onlyDesktopIni = entries.Length == 1 &&
+                string.Equals(Path.GetFileName(entries[0]), "desktop.ini", StringComparison.OrdinalIgnoreCase);
+            if (entries.Length == 0 || onlyDesktopIni)
+            {
+                if (onlyDesktopIni)
+                {
+                    File.SetAttributes(entries[0], FileAttributes.Normal);
+                    File.Delete(entries[0]);
+                }
+
+                var dirInfo = new DirectoryInfo(path);
+                if ((dirInfo.Attributes & FileAttributes.ReadOnly) != 0)
+                {
+                    dirInfo.Attributes &= ~FileAttributes.ReadOnly;
+                }
+
                 Directory.Delete(path, recursive: false);
             }
         }
